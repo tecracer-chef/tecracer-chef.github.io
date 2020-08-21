@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<!-- I AM IN ROOT -->
+<head>
+    <meta charset="utf-8">
+    <title>tecRacer - Chef Pull Requests</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width-device-width, initial-scale-1">
+    <script src="react.js"></script>
+    <script src="react-dom.js"></script>
+    <script src="babel-browser.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.16.2/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-table/6.5.3/react-table.js"></script>
+    <link rel="stylesheet" type="text/css"
+        href="https://cdnjs.cloudflare.com/ajax/libs/react-table/6.5.3/react-table.css">
+    <style>
+        html,
+        body {
+            font-family: "Amazon Ember", "Helvetica", "sans-serif";
+            margin: 0;
+            font-size: small;
+        }
+
+        a {
+            color: #FF9900;
+        }
+
+        h1 {
+            font-weight: 300;
+        }
+
+        .app {
+            width: 100%;
+        }
+
+        .app-header {
+            color: white;
+            text-align: center;
+            background: linear-gradient(30deg, #f90 55%, #FFC300);
+            width: 100%;
+            margin: 0 0 1em 0;
+            padding: 1em 0 1em 0;
+            box-shadow: 1px 2px 4px rgba(0, 0, 0, .3);
+        }
+
+        .app-logo {
+            width: 126px;
+            margin: 0 auto;
+        }
+
+        .app-body {
+            width: 400px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .app-body button {
+            background-color: #FF9900;
+            font-size: 14px;
+            color: white;
+            text-transform: uppercase;
+            padding: 1em;
+            border: none;
+        }
+
+        .app-body button:hover {
+            opacity: 0.8;
+        }
+
+        .app-logo-class {
+            height: 80px;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <div class="app-header">
+            <div class="app-logo">
+                <!--<img src="https://aws-amplify.github.io/images/Logos/Amplify-Logo-White.svg" alt="AWS Amplify" />
+                <img class="app-logo-class" src="https://www.tecracer.de/wp-content/uploads/2020/04/principal_partner_logo.png" />-->
+            </div>
+            <h1>tecRacer - Chef pull requests</h1>
+        </div>
+        <!-- <div class="app-body">
+            <button id="MutationEventButton">Add data</button>
+            <div id="MutationResult"></div>
+            <div id="QueryResult"></div>
+            <div id="SubscriptionResult"></div>
+        </div>-->
+    </div>
+    <!--        <script src="main.bundle.js"></script>-->
+
+    <div id="pullrequeststable"></div>
+    <script type="text/babel">
+        class PullRequestsTable extends React.Component {
+            constructor() {
+                super();
+
+                this.state = {
+                    tableData: [{
+                        state: '',
+                        url: '',
+                        number: '',
+                        title: '',
+                        created_at: '',
+                        closed_at: '',
+                        user: '',
+                        repository: '',
+                    }],
+                };
+            }
+
+            componentDidMount() {
+                axios.get('https://api.tecracer.consulting/chef-contributions/pull-requests.json', {
+                    // axios.get('http://private-9ff5e-stackoverflow.apiary-mock.com/questions', {
+                    responseType: 'json'
+                }).then(response => {
+                    this.setState({
+                        tableData: response.data
+                    });
+                });
+            }
+
+            render() {
+                const { tableData } = this.state;
+
+                return (<ReactTable.default
+                    data={tableData.pull_requests}
+                    columns={[
+                        {
+                            Header: 'Repo',
+                            columns: [
+                                {
+                                    Header: 'Repository',
+                                    accessor: 'repository',
+                                },
+                                {
+                                    Header: 'ID',
+                                    accessor: 'number',
+                                },
+                            ],
+                        },
+                        {
+                            Header: 'Details',
+                            columns: [
+                                {
+                                    Header: 'Title',
+                                    accessor: 'title',
+                                },
+                                {
+                                    Header: 'Created at',
+                                    accessor: 'created_at',
+                                },
+                                {
+                                    Header: 'Closed at',
+                                    accessor: 'closed_at',
+                                },
+                                {
+                                    Header: 'Username',
+                                    accessor: 'user',
+                                },
+                            ],
+                        },
+                        {
+                            Header: 'More',
+                            columns: [
+                                {
+                                    Header: 'State',
+                                    accessor: 'state',
+                                },
+                                {
+                                    Header: 'Link',
+                                    accessor: 'url',
+                                },
+                            ],
+                        },
+                    ]}
+                    defaultPageSize={20}
+                    className="-striped -highlight"
+                />
+                );
+            }
+        };
+
+        ReactDOM.render(<div><PullRequestsTable /></div>, document.getElementById("pullrequeststable"));
+    </script>
+
+</body>
+
+</html>
