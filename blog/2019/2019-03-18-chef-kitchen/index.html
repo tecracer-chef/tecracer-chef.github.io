@@ -6,8 +6,8 @@
       mode <span style=color:#ba2121>&#39;0755&#39;</span>
       content <span style=color:#ba2121>&#39;made for cooking&#39;</span>
     <span style=color:green;font-weight:700>end</span>
-</code></pre></div><h3 id=kitchen-1>Kitchen</h3><p>Bei der Erstellung unseres Cookbooks wurde automatisch eine <code>.kitchen.yml</code> in unserem Hauptverzeichnis vom Cookbook angelegt. Sie beinhaltet die gesamte Konfiguration unserer Kitchen Umgebung, die wir in den nächsten Schritten aufbauen.</p><div class=highlight><pre style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#bbb>    </span>--<span style=color:#ba2121;font-style:italic>-
-</span><span style=color:#ba2121;font-style:italic>    driver:</span><span style=color:#bbb>
+</code></pre></div><h3 id=kitchen-1>Kitchen</h3><p>Bei der Erstellung unseres Cookbooks wurde automatisch eine <code>.kitchen.yml</code> in unserem Hauptverzeichnis vom Cookbook angelegt. Sie beinhaltet die gesamte Konfiguration unserer Kitchen Umgebung, die wir in den nächsten Schritten aufbauen.</p><div class=highlight><pre style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#bbb>    </span>---<span style=color:#bbb>
+</span><span style=color:#bbb>    </span><span style=color:green;font-weight:700>driver</span>:<span style=color:#bbb>
 </span><span style=color:#bbb>      </span><span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>vagrant<span style=color:#bbb>
 </span><span style=color:#bbb>
 </span><span style=color:#bbb>    </span><span style=color:green;font-weight:700>provisioner</span>:<span style=color:#bbb>
@@ -18,8 +18,8 @@
 </span><span style=color:#bbb>      </span><span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>inspec<span style=color:#bbb>
 </span><span style=color:#bbb>
 </span><span style=color:#bbb>    </span><span style=color:green;font-weight:700>platforms</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span>- <span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>ubuntu<span style=color:#666>-16.04</span><span style=color:#bbb>
-</span><span style=color:#bbb>      </span>- <span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>centos<span style=color:#666>-7</span><span style=color:#bbb>
+</span><span style=color:#bbb>      </span>- <span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>ubuntu-16.04<span style=color:#bbb>
+</span><span style=color:#bbb>      </span>- <span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>centos-7<span style=color:#bbb>
 </span><span style=color:#bbb>
 </span><span style=color:#bbb>    </span><span style=color:green;font-weight:700>suites</span>:<span style=color:#bbb>
 </span><span style=color:#bbb>      </span>- <span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
@@ -29,8 +29,8 @@
 </span><span style=color:#bbb>          </span><span style=color:green;font-weight:700>inspec_tests</span>:<span style=color:#bbb>
 </span><span style=color:#bbb>            </span>- test/integration/default<span style=color:#bbb>
 </span><span style=color:#bbb>        </span><span style=color:green;font-weight:700>attributes</span>:<span style=color:#bbb>
-</span></code></pre></div><h4 id=kitchen-configuration>kitchen configuration</h4><p>Lasst uns einen genaueren Blick in den <code>driver</code> Bereich der .kitchen.yml werfen. Der <code>name</code> definiert das Plugin, welches beim Ausführen von Kitchen aufgerufen wird. Die offizielle Liste aller Plugins findet ihr <a href=https://docs.chef.io/kitchen.html#drivers>hier</a>.</p><p>Da wir Docker installiert haben, wollen wir Docker auch nutzen. Ändert also dazu den <code>name</code> auf <code>docker</code>.</p><div class=highlight><pre style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#bbb>    </span>--<span style=color:#ba2121;font-style:italic>-
-</span><span style=color:#ba2121;font-style:italic>    driver:</span><span style=color:#bbb>
+</span></code></pre></div><h4 id=kitchen-configuration>kitchen configuration</h4><p>Lasst uns einen genaueren Blick in den <code>driver</code> Bereich der .kitchen.yml werfen. Der <code>name</code> definiert das Plugin, welches beim Ausführen von Kitchen aufgerufen wird. Die offizielle Liste aller Plugins findet ihr <a href=https://docs.chef.io/kitchen.html#drivers>hier</a>.</p><p>Da wir Docker installiert haben, wollen wir Docker auch nutzen. Ändert also dazu den <code>name</code> auf <code>docker</code>.</p><div class=highlight><pre style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#bbb>    </span>---<span style=color:#bbb>
+</span><span style=color:#bbb>    </span><span style=color:green;font-weight:700>driver</span>:<span style=color:#bbb>
 </span><span style=color:#bbb>      </span><span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>docker<span style=color:#bbb>
 </span></code></pre></div><p>Um zu überprüfen, ob die Konfiguration vollständig ist und auch der Treiber geladen wurde, kann der Befehl <code>kitchen list</code> ausgeführt werden. Er wird eine kurze Liste ausgeben:</p><div class=highlight><pre style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>  Instance             Driver  Provisioner  Verifier  Transport  Last Action    Last Error
   default-ubuntu-1604  Docker  ChefZero     Inspec    Ssh        &lt;Not Created&gt;  &lt;None&gt;
