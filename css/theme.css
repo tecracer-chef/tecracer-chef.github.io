@@ -10546,9 +10546,42 @@ li a {
   flex: 1 !important;
 }
 
+.media-body a {
+  text-decoration: unset;
+}
+
 /* Author Box Styles */
 .author-box {
   background: #f7f7f7 !important;
   padding: 20px !important;
   border-radius: 2px !important;
+}
+
+.author-icons a {
+  text-decoration: unset;
+}
+
+.author-website {
+  padding: 5px;
+  font-size: 17px;
+}
+
+.author-twitter {
+  padding: 5px;
+  font-size: 17px;
+}
+
+.author-xing {
+  padding: 5px;
+  font-size: 17px;
+}
+
+.author-linkedin {
+  padding: 5px;
+  font-size: 17px;
+}
+
+.author-github {
+  padding: 5px;
+  font-size: 17px;
 }
