@@ -1,7 +1,95 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><title>Guest Operations and kitchen-vcenter | tecRacer Chef</title><meta name=viewport content="width=device-width,initial-scale=1"><link rel=canonical href=https://tecracer-chef.github.io/2019/10/guest-operations-and-kitchen-vcenter/><meta http-equiv=content-language content="en-us"><meta property="og:type" content="website"><meta property="og:site_name" content="tecRacer Chef"><meta property="og:title" content="Guest Operations and kitchen-vcenter"><meta property="og:url" content="https://tecracer-chef.github.io/2019/10/guest-operations-and-kitchen-vcenter/"><meta property="og:image" content="https://tecracer-chef.github.io/images/"><meta name=twitter:title content="tecRacer Chef"><meta name=twitter:url content="https://tecracer-chef.github.io/2019/10/guest-operations-and-kitchen-vcenter/"><meta name=twitter:image content="https://tecracer-chef.github.io/images/"><meta name=twitter:card content><link rel=alternate href=/blog/feed title="Patrick Schaumburg" type=application/rss+xml><link href=https://tecracer-chef.github.io/css/theme.css rel=stylesheet><script src=https://tecracer-chef.github.io/js/jquery.min.js></script><script src=https://tecracer-chef.github.io/js/uikit.min.js></script><script src=https://tecracer-chef.github.io/js/fa-all.js></script></head><body><div class="uk-container uk-container-center"><div class=tm-header><div class="tm-toolbar uk-clearfix uk-hidden-small"><div class=uk-float-right><div class=uk-panel><ul class=uk-subnav><li><a href=https://github.com/tecracer-chef class="uk-icon-hover uk-icon-small uk-icon-github" target=_blank></a></li><li><a href=https://twitter.com/tecracer class="uk-icon-hover uk-icon-small uk-icon-twitter" target=_blank></a></li><li><a href=https://www.xing.com/companies/tecracergmbh%26co.kg class="uk-icon-hover uk-icon-small uk-icon-xing" target=_blank></a></li><li><a href=https://www.linkedin.com/company/tecracer-group/ class="uk-icon-hover uk-icon-small uk-icon-linkedin" target=_blank></a></li><li><a href=https://www.facebook.com/tecRacer class="uk-icon-hover uk-icon-small uk-icon-facebook" target=_blank></a></li></ul></div></div></div><nav class=uk-navbar><a class=uk-navbar-brand href=/><img class="tm-logo uk-responsive-height uk-hidden-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
-<img class="tm-logo-small uk-responsive-height uk-visible-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt></a><div class=uk-hidden-small><ul class=uk-navbar-nav><li><a href=/>Blog</a></li><li><a href=/authors>Authors</a></li><li><a href=/github/github-prs.html>Pull Requests</a></li></ul></div><div class="uk-navbar-flip uk-visible-small"><a href=#offcanvas class=uk-navbar-toggle data-uk-offcanvas></a></div></nav></div><div id=content><main id=tm-content class=tm-content><article class=uk-article><div class="tm-article-featured-image uk-cover-background" style=background-image:url(/img/2019/10/wendy-scofield-TjfQR3JgGG8-unsplash.jpg)></div><div class="tm-article-content uk-position-relative"><div class="tm-article-date uk-text-center"><span class=tm-article-date-day>18</span>
-<span class=tm-article-date-month>Oct</span></div><h1 class=uk-article-title>Guest Operations and kitchen-vcenter</h1><p class=uk-article-meta>Written by
-<a target=_self title="Thomas Heinen's Author Profile SINGLE.HTML" href=/authors/thomas-heinen data-original-title="Author's Profile">Thomas Heinen</a></p><div class=uk-margin><h1 id=guest-operations-and-kitchen-vcenter>Guest Operations and kitchen-vcenter</h1><p>In this part of the blog series, we will look on how to speed up IP discovery of new machines with a little-known feature of the VMware Tools.</p><h2 id=requirements>Requirements</h2><p>The functionality demonstrated in this blog post relies on the [kitchen-vcenter] driver for Test Kitchen in at least version 2.4.0. VMware vSphere has supported the API used in this feature for a long time (pre-4.0), but I only tested the functionality on versions 6.5 and 6.7.</p><p>For invoking commands via Guest Operations, the vCenter user of Test Kitchen will need the <code>VirtualMachine.GuestOperations.Execute</code> and <code>VirtualMachine.GuestOperations.Query</code> permissions.</p><h2 id=ip-discovery>IP Discovery</h2><p>As I showed in the previous <a href>blog post on Linked Clones</a>, discovering the IP of a new VM needs about 30 seconds. While that might not sound like a long time for you, imagine doing 40 cycles of testing on a workday and 9 more colleagues having the same situation. That would make up for more than three hours of waiting per day&mldr;</p><p>To understand the problem, we need to understand that the IP discovery works via the VMware Tools installed on the VM. They get invoked at boot and communicate back to the vSphere hypervisor. In a first phase, this will include information about the Operating System and state of the Tools, including their version. It is only later, that additional information like the IP is polled and transmitted back. While polling DHCP for a new IP admittedly plays a role as well, over my benchmarks I came up at almost exactly 30 seconds under any circumstances.</p><p>As the source code of the <a href=https://github.com/vmware/open-vm-tools>open-vm-tools</a> is vast and I am no C expert, I asked the nice guys at VMware about this and they confirmed that there is a 30 second poll interval hard-coded within the tools. So apparently getting the needed information quickly is not possible.</p><p>Or is it?</p><h2 id=guest-operations-api>Guest Operations API</h2><p>Known mostly to VMware administrators, there has been a way to invoke commands remotely via VMware Tools for years. It is highly used for automated provisioning via Powershell, for example with the <a href=https://www.vmware.com/support/developer/windowstoolkit/wintk40u1/html/Invoke-VMScript.html><code>Invoke-VMScript</code></a> Cmdlet.</p><p>In fact, the <a href=https://www.vmware.com/support/developer/converter-sdk/conv60_apireference/vim.vm.guest.GuestOperationsManager.html>Guest Operations API documentation</a> shows a lot of functionality, including remote file management, process monitoring/control and even Windows Registry access. All of that, of course, only with valid Guest OS credentials.</p><p>With this info at hand, it is possible to remotely issue an OS-specific command to return the assigned IP address and retrieve that output to speed our discovery process up.</p><h2 id=configuration>Configuration</h2><p>I dubbed this feature &ldquo;Active IP Discovery&rdquo; (my initial name &ldquo;Aggressive Mode&rdquo; sounded too negative). While the code is a bit less straightforward due to asynchronity of remote calls, using it is quite simple:</p><div class=highlight><pre style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:green;font-weight:700>driver</span>:<span style=color:#bbb>
+<!doctype html><html lang=en>
+<head>
+<meta charset=utf-8>
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<title>Guest Operations and kitchen-vcenter | tecRacer Chef</title>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<link rel=canonical href=https://tecracer-chef.github.io/2019/10/guest-operations-and-kitchen-vcenter/>
+<meta http-equiv=content-language content="en-us">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="tecRacer Chef">
+<meta property="og:title" content="Guest Operations and kitchen-vcenter">
+<meta property="og:url" content="https://tecracer-chef.github.io/2019/10/guest-operations-and-kitchen-vcenter/">
+<meta property="og:image" content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:title content="tecRacer Chef">
+<meta name=twitter:url content="https://tecracer-chef.github.io/2019/10/guest-operations-and-kitchen-vcenter/">
+<meta name=twitter:image content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:card content>
+<link rel=alternate href=/blog/feed title="Patrick Schaumburg" type=application/rss+xml>
+<link href=https://tecracer-chef.github.io/css/theme.css rel=stylesheet>
+<script src=https://tecracer-chef.github.io/js/jquery.min.js></script>
+<script src=https://tecracer-chef.github.io/js/uikit.min.js></script>
+<script src=https://tecracer-chef.github.io/js/fa-all.js></script>
+</head>
+<body>
+<div class="uk-container uk-container-center">
+<div class=tm-header>
+<div class="tm-toolbar uk-clearfix uk-hidden-small">
+<div class=uk-float-right>
+<div class=uk-panel>
+<ul class=uk-subnav>
+<li><a href=https://github.com/tecracer-chef class="uk-icon-hover uk-icon-small uk-icon-github" target=_blank></a></li>
+<li><a href=https://twitter.com/tecracer class="uk-icon-hover uk-icon-small uk-icon-twitter" target=_blank></a></li>
+<li><a href=https://www.xing.com/companies/tecracergmbh%26co.kg class="uk-icon-hover uk-icon-small uk-icon-xing" target=_blank></a></li>
+<li><a href=https://www.linkedin.com/company/tecracer-group/ class="uk-icon-hover uk-icon-small uk-icon-linkedin" target=_blank></a></li>
+<li><a href=https://www.facebook.com/tecRacer class="uk-icon-hover uk-icon-small uk-icon-facebook" target=_blank></a></li>
+</ul>
+</div>
+</div>
+</div>
+<nav class=uk-navbar>
+<a class=uk-navbar-brand href=/>
+<img class="tm-logo uk-responsive-height uk-hidden-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+<img class="tm-logo-small uk-responsive-height uk-visible-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+<div class=uk-hidden-small>
+<ul class=uk-navbar-nav>
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+<div class="uk-navbar-flip uk-visible-small">
+<a href=#offcanvas class=uk-navbar-toggle data-uk-offcanvas></a>
+</div>
+</nav>
+</div>
+<div id=content>
+<main id=tm-content class=tm-content>
+<article class=uk-article>
+<div class="tm-article-featured-image uk-cover-background" style=background-image:url(/img/2019/10/wendy-scofield-TjfQR3JgGG8-unsplash.jpg)></div>
+<div class="tm-article-content uk-position-relative">
+<div class="tm-article-date uk-text-center">
+<span class=tm-article-date-day>
+18
+</span>
+<span class=tm-article-date-month>
+Oct
+</span>
+</div>
+<h1 class=uk-article-title>Guest Operations and kitchen-vcenter</h1>
+<p class=uk-article-meta>
+Written by
+<a target=_self title="Thomas Heinen's Author Profile SINGLE.HTML" href=/authors/thomas-heinen data-original-title="Author's Profile">Thomas Heinen</a>
+</p>
+<div class=uk-margin>
+<h1 id=guest-operations-and-kitchen-vcenter>Guest Operations and kitchen-vcenter</h1>
+<p>In this part of the blog series, we will look on how to speed up IP discovery of new machines with a little-known feature of the VMware Tools.</p>
+<h2 id=requirements>Requirements</h2>
+<p>The functionality demonstrated in this blog post relies on the [kitchen-vcenter] driver for Test Kitchen in at least version 2.4.0. VMware vSphere has supported the API used in this feature for a long time (pre-4.0), but I only tested the functionality on versions 6.5 and 6.7.</p>
+<p>For invoking commands via Guest Operations, the vCenter user of Test Kitchen will need the <code>VirtualMachine.GuestOperations.Execute</code> and <code>VirtualMachine.GuestOperations.Query</code> permissions.</p>
+<h2 id=ip-discovery>IP Discovery</h2>
+<p>As I showed in the previous <a href>blog post on Linked Clones</a>, discovering the IP of a new VM needs about 30 seconds. While that might not sound like a long time for you, imagine doing 40 cycles of testing on a workday and 9 more colleagues having the same situation. That would make up for more than three hours of waiting per day&mldr;</p>
+<p>To understand the problem, we need to understand that the IP discovery works via the VMware Tools installed on the VM. They get invoked at boot and communicate back to the vSphere hypervisor. In a first phase, this will include information about the Operating System and state of the Tools, including their version. It is only later, that additional information like the IP is polled and transmitted back. While polling DHCP for a new IP admittedly plays a role as well, over my benchmarks I came up at almost exactly 30 seconds under any circumstances.</p>
+<p>As the source code of the <a href=https://github.com/vmware/open-vm-tools>open-vm-tools</a> is vast and I am no C expert, I asked the nice guys at VMware about this and they confirmed that there is a 30 second poll interval hard-coded within the tools. So apparently getting the needed information quickly is not possible.</p>
+<p>Or is it?</p>
+<h2 id=guest-operations-api>Guest Operations API</h2>
+<p>Known mostly to VMware administrators, there has been a way to invoke commands remotely via VMware Tools for years. It is highly used for automated provisioning via Powershell, for example with the <a href=https://www.vmware.com/support/developer/windowstoolkit/wintk40u1/html/Invoke-VMScript.html><code>Invoke-VMScript</code></a> Cmdlet.</p>
+<p>In fact, the <a href=https://www.vmware.com/support/developer/converter-sdk/conv60_apireference/vim.vm.guest.GuestOperationsManager.html>Guest Operations API documentation</a> shows a lot of functionality, including remote file management, process monitoring/control and even Windows Registry access. All of that, of course, only with valid Guest OS credentials.</p>
+<p>With this info at hand, it is possible to remotely issue an OS-specific command to return the assigned IP address and retrieve that output to speed our discovery process up.</p>
+<h2 id=configuration>Configuration</h2>
+<p>I dubbed this feature &ldquo;Active IP Discovery&rdquo; (my initial name &ldquo;Aggressive Mode&rdquo; sounded too negative). While the code is a bit less straightforward due to asynchronity of remote calls, using it is quite simple:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:green;font-weight:700>driver</span>:<span style=color:#bbb>
 </span><span style=color:#bbb>  </span><span style=color:#408080;font-style:italic># ... usual configuration goes here ...</span><span style=color:#bbb>
 </span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>active_discovery</span>:<span style=color:#bbb> </span><span style=color:green;font-weight:700>true</span><span style=color:#bbb>
 </span><span style=color:#bbb>
@@ -11,4 +99,166 @@
 </span><span style=color:#bbb>     </span><span style=color:green;font-weight:700>vm_os</span>:<span style=color:#bbb> </span>windows<span style=color:#bbb>
 </span><span style=color:#bbb>     </span><span style=color:green;font-weight:700>vm_username</span>:<span style=color:#bbb> </span><span style=color:#ba2121>&#34;&lt;%= ENV[&#39;GUESTOS_USERNAME&#39;] %&gt;&#34;</span><span style=color:#bbb>
 </span><span style=color:#bbb>     </span><span style=color:green;font-weight:700>vm_password</span>:<span style=color:#bbb> </span><span style=color:#ba2121>&#34;&lt;%= ENV[&#39;GUESTOS_PASSWORD&#39;] %&gt;&#34;</span><span style=color:#bbb>
-</span></code></pre></div><p>Please keep in mind to never hardcode credentials in your files, to prevent those being pushed into some GIT repository.</p><p>If you do not specify the <code>vm_os</code> parameter, the value reported in the first phase of VMware Tools is used. This does not have any performance impact, so you can either rely on it or just make it explicit.</p><p>Two discovery commands are currently hardcoded which should cover a wide range of systems:</p><ul><li>Linux default: <code>ip address show scope global | grep global | cut -b10- | cut -d/ -f1</code></li><li>Windows default: <code>sleep 5 & ipconfig</code></li></ul><p>If you want your own command to be executed instead, you can use the <code>active_discovery_command</code> property. The first IP in the output will be passed back as the IP of the virtual machine. Windows will always use CMD instead of Powershell to reduce loading times. I tried using Powershell before, but loading it is awfully slow as remote commands are headless and automatically run on a very low priority in Windows.</p><p>As execution on guest VMs might fail due to race conditions or errors during execution, this will make kitchen-vcenter fall back to the standard discovery method via VMware Tools.</p><h2 id=benchmarks>Benchmarks</h2><p>The following benchmarks (and the other ones in related posts) were part of my talk on kitchen-vcenter at ChefConf London 2019. I measured everything over 10 operations on my Laptop running a nested vSphere infrastructure.</p><p>Linked Clone of a Windows 2016 machine with standard discovery:</p><table><thead><tr><th>Phase</th><th style=text-align:right>Minimum</th><th style=text-align:right>Maximum</th><th style=text-align:right>Average</th></tr></thead><tbody><tr><td>Cloning</td><td style=text-align:right>1.0</td><td style=text-align:right>1.5</td><td style=text-align:right>1.1</td></tr><tr><td>Booting</td><td style=text-align:right>24.1</td><td style=text-align:right>36.2</td><td style=text-align:right>26.3</td></tr><tr><td>Getting IP</td><td style=text-align:right>28.5</td><td style=text-align:right>30.5</td><td style=text-align:right>30.2</td></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td>Using active IP discovery on the same machine:</td><td></td><td></td><td></td></tr></tbody></table><table><thead><tr><th>Phase</th><th style=text-align:right>Minimum</th><th style=text-align:right>Maximum</th><th style=text-align:right>Average</th></tr></thead><tbody><tr><td>Cloning</td><td style=text-align:right>0.8</td><td style=text-align:right>1.3</td><td style=text-align:right>1.0</td></tr><tr><td>Booting</td><td style=text-align:right>24.1</td><td style=text-align:right>46.3</td><td style=text-align:right>35.0</td></tr><tr><td>Getting IP</td><td style=text-align:right>3.0</td><td style=text-align:right>22.4</td><td style=text-align:right>11.2</td></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td>In some cases, I have seen minimum times below 2 seconds but the variance is pretty high on Windows (presumably due to background processes). Linux has a much more consistent result with 1.5 seconds on average. On Windows, though we are down from about 58 seconds to 47 until we can log into it.</td><td></td><td></td><td></td></tr></tbody></table><h2 id=downsides>Downsides</h2><p>There are only a few downsides to this approach. Mainly, we are risking to query the IP before it has been assigned or have a higher variance in response times. This won&rsquo;t make Active Discovery slower than the usual method, though.</p><p>In some environments, the Guest Operations calls are not permitted due to security reasons - it is effectively an administrative backdoor after all. But that is more of a social/political problem than e technological one</p><h2 id=non-network-communication>Non-Network Communication</h2><p>During implementation, I was confused on how the VM communicates with the vSphere Hypervisor as there is no IP assigned when VMware Tools start. Digging through the Linux tools source code cleared that up.</p><p>VMware has different channels to communicate with guest VMs. Examples include virtual IO channels mapped into and special CPU commands executed on its guest VMs to establish a network-independant communications channel. An example for this can be seen in its <a href=https://github.com/vmware/open-vm-tools/blob/9369f1d77fdd90f50b60b44f1ba8c8da00ef55ca/open-vm-tools/lib/backdoor/backdoor.c>backdoor.c</a> file.</p><h2 id=there-is-even-more>There is (even) more</h2><p>In the next blog post, we will see how we can avoid booting Windows before working on a new clone. Yes, that is actually possible! Check back next week to see how.</p></div></div></article><article class=uk-article><div class=container><section class=author-box itemprop=author itemscope itemtype=https://schema.org/Person><div class="media author-box"><div class=media-figure><img alt="Author Image" src=/authors/theinen.png class="avatar avatar-100 photo" height=125 width=125></div><div class=media-body><h2><a href=/authors/thomas-heinen>Thomas Heinen</a></h2><p>Thomas is a Cloud Consultant and Trainer at tecRacer Consulting with a focus on Chef, AWS, DevOps and Security.</p><div class=author-icons><a target=_self class=author-website title="Thomas Heinen's Author Profile" href=/authors/thomas-heinen data-original-title="Author's Profile"><i class="fas fa-id-card"></i></a><a target=_new class=author-xing title="Thomas Heinen on Xing" href=https://xing.com/profile/Thomas_Heinen4 data-original-title=Xing><i class="fab fa-xing"></i></a><a target=_new class=author-linkedin title="Thomas Heinen on LinkedIn" href=https://linkedin.com/in/thomas-heinen data-original-title=LinkdIn><i class="fab fa-linkedin"></i></a><a target=_new class=author-github title="Thomas Heinen on GitHub" href=https://github.com/tecracer-theinen data-original-title=Github><i class="fab fa-github"></i></a></div></div></div></section></div></article></main></div><div id=tm-footer class=tm-footer><div id=tm-footer class="tm-footer tm-footer-margin-top"><div class="uk-panel uk-panel-space uk-text-center"><p>Copyright © 2018-today by <a href=https://chef.tecracer.de/ target=_blank>tecRacer</a></p></div></div></div><div id=offcanvas class=uk-offcanvas aria-hidden=true><div class="uk-offcanvas-bar uk-offcanvas-bar-flip"><div class="uk-panel uk-text-center"><a href=https://tecracer-chef.github.io/></a><img src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt></a></div><ul class="uk-nav uk-nav-offcanvas"><li><a href=/>Blog</a></li><li><a href=/authors>Authors</a></li><li><a href=/github/github-prs.html>Pull Requests</a></li></ul></div></div></div></body></html>
+</span></code></pre></div><p>Please keep in mind to never hardcode credentials in your files, to prevent those being pushed into some GIT repository.</p>
+<p>If you do not specify the <code>vm_os</code> parameter, the value reported in the first phase of VMware Tools is used. This does not have any performance impact, so you can either rely on it or just make it explicit.</p>
+<p>Two discovery commands are currently hardcoded which should cover a wide range of systems:</p>
+<ul>
+<li>Linux default: <code>ip address show scope global | grep global | cut -b10- | cut -d/ -f1</code></li>
+<li>Windows default: <code>sleep 5 & ipconfig</code></li>
+</ul>
+<p>If you want your own command to be executed instead, you can use the <code>active_discovery_command</code> property. The first IP in the output will be passed back as the IP of the virtual machine. Windows will always use CMD instead of Powershell to reduce loading times. I tried using Powershell before, but loading it is awfully slow as remote commands are headless and automatically run on a very low priority in Windows.</p>
+<p>As execution on guest VMs might fail due to race conditions or errors during execution, this will make kitchen-vcenter fall back to the standard discovery method via VMware Tools.</p>
+<h2 id=benchmarks>Benchmarks</h2>
+<p>The following benchmarks (and the other ones in related posts) were part of my talk on kitchen-vcenter at ChefConf London 2019. I measured everything over 10 operations on my Laptop running a nested vSphere infrastructure.</p>
+<p>Linked Clone of a Windows 2016 machine with standard discovery:</p>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th style=text-align:right>Minimum</th>
+<th style=text-align:right>Maximum</th>
+<th style=text-align:right>Average</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cloning</td>
+<td style=text-align:right>1.0</td>
+<td style=text-align:right>1.5</td>
+<td style=text-align:right>1.1</td>
+</tr>
+<tr>
+<td>Booting</td>
+<td style=text-align:right>24.1</td>
+<td style=text-align:right>36.2</td>
+<td style=text-align:right>26.3</td>
+</tr>
+<tr>
+<td>Getting IP</td>
+<td style=text-align:right>28.5</td>
+<td style=text-align:right>30.5</td>
+<td style=text-align:right>30.2</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Using active IP discovery on the same machine:</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th style=text-align:right>Minimum</th>
+<th style=text-align:right>Maximum</th>
+<th style=text-align:right>Average</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cloning</td>
+<td style=text-align:right>0.8</td>
+<td style=text-align:right>1.3</td>
+<td style=text-align:right>1.0</td>
+</tr>
+<tr>
+<td>Booting</td>
+<td style=text-align:right>24.1</td>
+<td style=text-align:right>46.3</td>
+<td style=text-align:right>35.0</td>
+</tr>
+<tr>
+<td>Getting IP</td>
+<td style=text-align:right>3.0</td>
+<td style=text-align:right>22.4</td>
+<td style=text-align:right>11.2</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>In some cases, I have seen minimum times below 2 seconds but the variance is pretty high on Windows (presumably due to background processes). Linux has a much more consistent result with 1.5 seconds on average. On Windows, though we are down from about 58 seconds to 47 until we can log into it.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id=downsides>Downsides</h2>
+<p>There are only a few downsides to this approach. Mainly, we are risking to query the IP before it has been assigned or have a higher variance in response times. This won&rsquo;t make Active Discovery slower than the usual method, though.</p>
+<p>In some environments, the Guest Operations calls are not permitted due to security reasons - it is effectively an administrative backdoor after all. But that is more of a social/political problem than e technological one</p>
+<h2 id=non-network-communication>Non-Network Communication</h2>
+<p>During implementation, I was confused on how the VM communicates with the vSphere Hypervisor as there is no IP assigned when VMware Tools start. Digging through the Linux tools source code cleared that up.</p>
+<p>VMware has different channels to communicate with guest VMs. Examples include virtual IO channels mapped into and special CPU commands executed on its guest VMs to establish a network-independant communications channel. An example for this can be seen in its <a href=https://github.com/vmware/open-vm-tools/blob/9369f1d77fdd90f50b60b44f1ba8c8da00ef55ca/open-vm-tools/lib/backdoor/backdoor.c>backdoor.c</a> file.</p>
+<h2 id=there-is-even-more>There is (even) more</h2>
+<p>In the next blog post, we will see how we can avoid booting Windows before working on a new clone. Yes, that is actually possible! Check back next week to see how.</p>
+</div>
+</div>
+</article>
+<article class=uk-article>
+<div class=container>
+<section class=author-box itemprop=author itemscope itemtype=https://schema.org/Person>
+<div class="media author-box">
+<div class=media-figure>
+<img alt="Author Image" src=/authors/theinen.png class="avatar avatar-100 photo" height=125 width=125>
+</div>
+<div class=media-body>
+<h2><a href=/authors/thomas-heinen>Thomas Heinen</a></h2>
+<p>
+Thomas is a Cloud Consultant and Trainer at tecRacer Consulting with a focus on Chef, AWS, DevOps and Security.
+</p>
+<div class=author-icons>
+<a target=_self class=author-website title="Thomas Heinen's Author Profile" href=/authors/thomas-heinen data-original-title="Author's Profile">
+<i class="fas fa-id-card"></i>
+</a>
+<a target=_new class=author-xing title="Thomas Heinen on Xing" href=https://xing.com/profile/Thomas_Heinen4 data-original-title=Xing>
+<i class="fab fa-xing"></i>
+</a>
+<a target=_new class=author-linkedin title="Thomas Heinen on LinkedIn" href=https://linkedin.com/in/thomas-heinen data-original-title=LinkdIn>
+<i class="fab fa-linkedin"></i>
+</a>
+<a target=_new class=author-github title="Thomas Heinen on GitHub" href=https://github.com/tecracer-theinen data-original-title=Github>
+<i class="fab fa-github"></i>
+</a>
+</div>
+</div>
+</div>
+</section>
+</div>
+</article>
+</main>
+</div>
+<div id=tm-footer class=tm-footer>
+<div id=tm-footer class="tm-footer tm-footer-margin-top">
+<div class="uk-panel uk-panel-space uk-text-center">
+<p>Copyright © 2018-today by <a href=https://chef.tecracer.de/ target=_blank>tecRacer</a></p>
+</div>
+</div>
+</div><div id=offcanvas class=uk-offcanvas aria-hidden=true>
+<div class="uk-offcanvas-bar uk-offcanvas-bar-flip">
+<div class="uk-panel uk-text-center">
+<a href=https://tecracer-chef.github.io/></a>
+<img src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+</div>
+<ul class="uk-nav uk-nav-offcanvas">
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+</div>
+</div>
+</body>
+</html>

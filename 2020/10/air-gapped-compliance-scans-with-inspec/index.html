@@ -1,0 +1,210 @@
+<!doctype html><html lang=en>
+<head>
+<meta charset=utf-8>
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<title>Air-Gapped Compliance Scans with InSpec | tecRacer Chef</title>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<link rel=canonical href=https://tecracer-chef.github.io/2020/10/air-gapped-compliance-scans-with-inspec/>
+<meta http-equiv=content-language content="en-us">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="tecRacer Chef">
+<meta property="og:title" content="Air-Gapped Compliance Scans with InSpec">
+<meta property="og:url" content="https://tecracer-chef.github.io/2020/10/air-gapped-compliance-scans-with-inspec/">
+<meta property="og:image" content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:title content="tecRacer Chef">
+<meta name=twitter:url content="https://tecracer-chef.github.io/2020/10/air-gapped-compliance-scans-with-inspec/">
+<meta name=twitter:image content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:card content>
+<link rel=alternate href=/blog/feed title="Patrick Schaumburg" type=application/rss+xml>
+<link href=https://tecracer-chef.github.io/css/theme.css rel=stylesheet>
+<script src=https://tecracer-chef.github.io/js/jquery.min.js></script>
+<script src=https://tecracer-chef.github.io/js/uikit.min.js></script>
+<script src=https://tecracer-chef.github.io/js/fa-all.js></script>
+</head>
+<body>
+<div class="uk-container uk-container-center">
+<div class=tm-header>
+<div class="tm-toolbar uk-clearfix uk-hidden-small">
+<div class=uk-float-right>
+<div class=uk-panel>
+<ul class=uk-subnav>
+<li><a href=https://github.com/tecracer-chef class="uk-icon-hover uk-icon-small uk-icon-github" target=_blank></a></li>
+<li><a href=https://twitter.com/tecracer class="uk-icon-hover uk-icon-small uk-icon-twitter" target=_blank></a></li>
+<li><a href=https://www.xing.com/companies/tecracergmbh%26co.kg class="uk-icon-hover uk-icon-small uk-icon-xing" target=_blank></a></li>
+<li><a href=https://www.linkedin.com/company/tecracer-group/ class="uk-icon-hover uk-icon-small uk-icon-linkedin" target=_blank></a></li>
+<li><a href=https://www.facebook.com/tecRacer class="uk-icon-hover uk-icon-small uk-icon-facebook" target=_blank></a></li>
+</ul>
+</div>
+</div>
+</div>
+<nav class=uk-navbar>
+<a class=uk-navbar-brand href=/>
+<img class="tm-logo uk-responsive-height uk-hidden-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+<img class="tm-logo-small uk-responsive-height uk-visible-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+<div class=uk-hidden-small>
+<ul class=uk-navbar-nav>
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+<div class="uk-navbar-flip uk-visible-small">
+<a href=#offcanvas class=uk-navbar-toggle data-uk-offcanvas></a>
+</div>
+</nav>
+</div>
+<div id=content>
+<main id=tm-content class=tm-content>
+<article class=uk-article>
+<div class="tm-article-featured-image uk-cover-background" style=background-image:url(/img/2020/10/claudio-schwarz-purzlbaum-cKrpgejIZpU-unsplash.jpg)></div>
+<div class="tm-article-content uk-position-relative">
+<div class="tm-article-date uk-text-center">
+<span class=tm-article-date-day>
+30
+</span>
+<span class=tm-article-date-month>
+Oct
+</span>
+</div>
+<h1 class=uk-article-title>Air-Gapped Compliance Scans with InSpec</h1>
+<p class=uk-article-meta>
+Written by
+<a target=_self title="Thomas Heinen's Author Profile SINGLE.HTML" href=/authors/thomas-heinen data-original-title="Author's Profile">Thomas Heinen</a>
+</p>
+<div class=uk-margin>
+<p><a href=https://www.chef.io/products/chef-inspec>Chef InSpec</a> offers the possibility to scan any type of device using community-authored compliance profiles. As InSpec needs to connect to the machines, networking and firewall rules make this task tricky in bigger environments.
+With the newly released <code>train-awsssm</code> plugin, this situation changes drastically. Read on, if you want to know how.</p>
+<h2 id=inspec-profiles>InSpec Profiles</h2>
+<p><a href=https://docs.chef.io/inspec/>Chef InSpec</a> is a tool which complements the configuration management aspect of <a href=https://www.chef.io/products/chef-infra>Chef Infra</a>. While Infra sets configuration of a system to a desired state, Chef InSpec is accountable to verify that the current state complies to best practices. The most popular examples for this are guidelines by the Center for Internet Security (CIS) or NIST security technical implementation guide (STIG). There are other examples of checking the current patches as well.</p>
+<p>In general there are three categories of InSpec Profiles:</p>
+<ul>
+<li>commercial (sold by Chef as Premium content and audited by CIS and other organizations)</li>
+<li><a href=https://github.com/topics/inspec-profile>opensource</a> (e.g. <a href=https://github.com/dev-sec>dev-sec.io</a> or <a href=https://github.com/mitre>MITRE</a> provide several)</li>
+<li>self implemented profiles</li>
+</ul>
+<p>Writing your own profiles is pretty easy, as InSpec offers a readable domain specific language:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ruby data-lang=ruby>describe package(<span style=color:#ba2121>&#39;apache2&#39;</span>) <span style=color:green;font-weight:700>do</span>
+  it { should be_installed }
+<span style=color:green;font-weight:700>end</span>
+
+describe service(<span style=color:#ba2121>&#39;apache2&#39;</span>) <span style=color:green;font-weight:700>do</span>
+  it { should be_running }
+  it { should be_enabled }
+<span style=color:green;font-weight:700>end</span>
+</code></pre></div><p>The good thing is, that InSpec does not need to be installed on the machines you want to monitor <sup id=fnref:1><a href=#fn:1 class=footnote-ref role=doc-noteref>1</a></sup> - it uses a system of executing commands via a transport mechanism like SSH or WinRM. In addition, you can just reference profiles by URL and can even point it to Git repositories.</p>
+<p>If you want to scan a Linux machine, you could do this:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=color:#408080;font-style:italic># Scan a remote Linux machine</span>
+inspec <span style=color:green>exec</span> https://github.com/dev-sec/linux-baseline/archive/2.5.0.tar.gz <span style=color:#b62;font-weight:700>\
+</span><span style=color:#b62;font-weight:700></span>            --target ssh://user@10.20.30.40
+
+<span style=color:#408080;font-style:italic># Scan a remote Windows machine</span>
+inspec <span style=color:green>exec</span> https://github.com/dev-sec/linux-baseline/archive/2.5.0.tar.gz <span style=color:#b62;font-weight:700>\
+</span><span style=color:#b62;font-weight:700></span>            --target winrm://user@10.20.30.41 <span style=color:#b62;font-weight:700>\
+</span><span style=color:#b62;font-weight:700></span>            --password secret
+</code></pre></div><p>The result will be an extensive check and report for the profile. You can even select the format of the reports (text, json, junit or even fancy HTML are possible). Of course you need to provide some sort of credentials during the setup <sup id=fnref:2><a href=#fn:2 class=footnote-ref role=doc-noteref>2</a></sup></p>
+<h2 id=networking>Networking</h2>
+<p>There are some obvious problems with this architecture. Being a push-based system and not relying on an agent means that you need to be able to reach the machines under test.</p>
+<p>In AWS, that can pose some challenges. Hopefully, your machines are not publically accessible but safe and sound in a private subnet? That means you need to have either a local runner for the scans per VPC or have it a central one in a shared services VPC, possibly connected via <a href=https://aws.amazon.com/transit-gateway/>Transit Gateway</a>.</p>
+<p>But one the big problems is possibly maintainability, especially the need to open ports for the scans and create a user locally which can connect. A good pattern for this is (of course) the use of configuration management on the machines to set up the scanning user and adding a separate Security Group which allows <code>TCP/22</code> (SSH), <code>TCP/5985</code> (WinRM) from the central scanner.</p>
+<h2 id=train-and-aws-systems-manager>Train and AWS Systems Manager</h2>
+<p>To find a better way without needing network connectivity or firewall rules, let&rsquo;s dive deeper in how InSpec actually works:</p>
+<p>InSpec includes a fully fledged <a href=https://github.com/inspec/inspec/tree/master/lib/inspec/plugin/v2/plugin_types>plugin system</a>, which adds the opportunity to add custom functionality to the description language (DSL Plugins), extend it&rsquo;s CLI, inject input parameters or change the type of resulting report. More interestingly, it uses a complete abstraction for connecting to machines under the hood - which is called <a href=https://github.com/inspec/train>Train</a>.</p>
+<p>Train provides several <a href=https://github.com/inspec/train/tree/master/lib/train/transports>transports</a> for connecting to systems which generally fall into two categories:</p>
+<ul>
+<li>line oriented (SSH, Docker, Local execution, WinRM, &mldr;)</li>
+<li>API oriented (AWS, Azure, GCP, VMware, &mldr;)</li>
+</ul>
+<p>While the most common ones are bundled with InSpec, there are also community-provided transports like <a href=https://github.com/bgeesaman/train-kubernetes/>Kubernetes</a>, <a href=https://github.com/NexusSW/train-lxd/>LXD</a>, <a href=https://github.com/inspec/train-habitat/>Habitat</a> or even exotic ones like <a href=https://github.com/tecracer-chef/train-serial/>Serial/USB</a> and <a href=https://github.com/tecracer-chef/train-telnet/>Telnet</a> <sup id=fnref:3><a href=#fn:3 class=footnote-ref role=doc-noteref>3</a></sup>.</p>
+<p>Thinking of Amazon Web Services, the <a href=https://aws.amazon.com/systems-manager/>AWS Systems Manager</a> also provides a way of executing commands remotely: Run Commands.</p>
+<p>As you might know, the SSM Agent is preinstalled on many of the common AWS AMIs already and you only need to <a href=https://docs.aws.amazon.com/systems-manager/latest/userguide/setup-instance-profile.html>assign an IAM profile</a> to your instance to take advantage of it. Combining useful functionality like software inventory, patch management and package distribution, many customers already have SSM in daily use.</p>
+<p>To connect these two worlds, I wrote the <a href=https://github.com/tecracer-chef/train-awsssm/>Train AWS-SSM Transport</a> a while ago which can now be used with InSpec thanks to <a href=https://github.com/tecracer-chef/train-awsssm/releases/tag/v0.2.0>today&rsquo;s 0.2.0 release</a>.</p>
+<p>This means that you can now scan EC2 instances simply by:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>gem install train-awsssm
+
+inspec <span style=color:green>exec</span> https://github.com/dev-sec/linux-baseline/archive/2.5.0.tar.gz <span style=color:#b62;font-weight:700>\
+</span><span style=color:#b62;font-weight:700></span>            --target awsssm://10.20.30.40
+</code></pre></div><p><img src=/img/2020/10/inspec-linux-result.png alt="InSpec Windows Result"></p>
+<p>To specify the instance to scan, you can just use the public/private IP, a resolvable hostname or the instance ID with this transport plugin.</p>
+<p>This way you do not need to configure networking, VPC peering/Transit Gateways or Security groups. Simply have a role on your InSpec runner (or some other credentials) and enable it to execute Run-Commands.</p>
+<p>Of course there are caveats with this way of scanning:</p>
+<ul>
+<li>Run Commands are always executed with administrative privileges as they are also used for software installation and other tasks.</li>
+<li>as InSpec is issuing every scan command by itself, the overhead of sending commands and waiting for response stacks up. Running a Windows baseline scan can be around 30 minutes, while the normal WinRM-based scan is much faster.</li>
+</ul>
+<h2 id=future>Future</h2>
+<p>To address the problems with executing scans as an administrative user, I plan to include proper <a href=https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html>Session Manager</a> support in the next version. As Session Manager can at least on Linux use the &ldquo;Run As&rdquo; feature, this reduces security concerns. Also, execution will be much faster as it is effectively channeling SSH/WinRM through the SSM Agent instead of single commands.</p>
+<p>Feel free to open up issues for your discovered bugs or desired additional features on the <a href=https://github.com/tecracer-chef/train-awsssm/>train-awsssm GitHub page</a>.</p>
+<section class=footnotes role=doc-endnotes>
+<hr>
+<ol>
+<li id=fn:1 role=doc-endnote>
+<p>It is worth noting that you could also install InSpec on every machine and then use the <code>AWS-RunInspecChecks</code> on AWS Systems Manager to schedule and run the checks. It is even possible to report findings into Security Hub.&#160;<a href=#fnref:1 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p>
+</li>
+<li id=fn:2 role=doc-endnote>
+<p>Do not worry: You can store credentials in a config file instead of littering them in your shell history. See the <a href=https://docs.chef.io/inspec/config/#complete-example>InSpec documentation</a> for details.&#160;<a href=#fnref:2 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p>
+</li>
+<li id=fn:3 role=doc-endnote>
+<p>Actually, the mentioned exotic ones were written by me during an even more exotic Proof of Concept. I published them mostly for fun and don&rsquo;t expect widespread use.&#160;<a href=#fnref:3 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p>
+</li>
+</ol>
+</section>
+</div>
+</div>
+</article>
+<article class=uk-article>
+<div class=container>
+<section class=author-box itemprop=author itemscope itemtype=https://schema.org/Person>
+<div class="media author-box">
+<div class=media-figure>
+<img alt="Author Image" src=/authors/theinen.png class="avatar avatar-100 photo" height=125 width=125>
+</div>
+<div class=media-body>
+<h2><a href=/authors/thomas-heinen>Thomas Heinen</a></h2>
+<p>
+Thomas is a Cloud Consultant and Trainer at tecRacer Consulting with a focus on Chef, AWS, DevOps and Security.
+</p>
+<div class=author-icons>
+<a target=_self class=author-website title="Thomas Heinen's Author Profile" href=/authors/thomas-heinen data-original-title="Author's Profile">
+<i class="fas fa-id-card"></i>
+</a>
+<a target=_new class=author-xing title="Thomas Heinen on Xing" href=https://xing.com/profile/Thomas_Heinen4 data-original-title=Xing>
+<i class="fab fa-xing"></i>
+</a>
+<a target=_new class=author-linkedin title="Thomas Heinen on LinkedIn" href=https://linkedin.com/in/thomas-heinen data-original-title=LinkdIn>
+<i class="fab fa-linkedin"></i>
+</a>
+<a target=_new class=author-github title="Thomas Heinen on GitHub" href=https://github.com/tecracer-theinen data-original-title=Github>
+<i class="fab fa-github"></i>
+</a>
+</div>
+</div>
+</div>
+</section>
+</div>
+</article>
+</main>
+</div>
+<div id=tm-footer class=tm-footer>
+<div id=tm-footer class="tm-footer tm-footer-margin-top">
+<div class="uk-panel uk-panel-space uk-text-center">
+<p>Copyright © 2018-today by <a href=https://chef.tecracer.de/ target=_blank>tecRacer</a></p>
+</div>
+</div>
+</div><div id=offcanvas class=uk-offcanvas aria-hidden=true>
+<div class="uk-offcanvas-bar uk-offcanvas-bar-flip">
+<div class="uk-panel uk-text-center">
+<a href=https://tecracer-chef.github.io/></a>
+<img src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+</div>
+<ul class="uk-nav uk-nav-offcanvas">
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+</div>
+</div>
+</body>
+</html>

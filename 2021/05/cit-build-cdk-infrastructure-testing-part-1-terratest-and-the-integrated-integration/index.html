@@ -1,0 +1,416 @@
+<!doctype html><html lang=en>
+<head>
+<meta charset=utf-8>
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<title>CIT - Build CDK Infrastructure Testing - Part 1 - Terratest and the Integrated Integration | tecRacer Chef</title>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<link rel=canonical href=https://tecracer-chef.github.io/2021/05/cit-build-cdk-infrastructure-testing-part-1-terratest-and-the-integrated-integration/>
+<meta http-equiv=content-language content="en-us">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="tecRacer Chef">
+<meta property="og:title" content="CIT - Build CDK Infrastructure Testing - Part 1 - Terratest and the Integrated Integration">
+<meta property="og:url" content="https://tecracer-chef.github.io/2021/05/cit-build-cdk-infrastructure-testing-part-1-terratest-and-the-integrated-integration/">
+<meta property="og:image" content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:title content="tecRacer Chef">
+<meta name=twitter:url content="https://tecracer-chef.github.io/2021/05/cit-build-cdk-infrastructure-testing-part-1-terratest-and-the-integrated-integration/">
+<meta name=twitter:image content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:card content>
+<link rel=alternate href=/blog/feed title="Patrick Schaumburg" type=application/rss+xml>
+<link href=https://tecracer-chef.github.io/css/theme.css rel=stylesheet>
+<script src=https://tecracer-chef.github.io/js/jquery.min.js></script>
+<script src=https://tecracer-chef.github.io/js/uikit.min.js></script>
+<script src=https://tecracer-chef.github.io/js/fa-all.js></script>
+</head>
+<body>
+<div class="uk-container uk-container-center">
+<div class=tm-header>
+<div class="tm-toolbar uk-clearfix uk-hidden-small">
+<div class=uk-float-right>
+<div class=uk-panel>
+<ul class=uk-subnav>
+<li><a href=https://github.com/tecracer-chef class="uk-icon-hover uk-icon-small uk-icon-github" target=_blank></a></li>
+<li><a href=https://twitter.com/tecracer class="uk-icon-hover uk-icon-small uk-icon-twitter" target=_blank></a></li>
+<li><a href=https://www.xing.com/companies/tecracergmbh%26co.kg class="uk-icon-hover uk-icon-small uk-icon-xing" target=_blank></a></li>
+<li><a href=https://www.linkedin.com/company/tecracer-group/ class="uk-icon-hover uk-icon-small uk-icon-linkedin" target=_blank></a></li>
+<li><a href=https://www.facebook.com/tecRacer class="uk-icon-hover uk-icon-small uk-icon-facebook" target=_blank></a></li>
+</ul>
+</div>
+</div>
+</div>
+<nav class=uk-navbar>
+<a class=uk-navbar-brand href=/>
+<img class="tm-logo uk-responsive-height uk-hidden-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+<img class="tm-logo-small uk-responsive-height uk-visible-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+<div class=uk-hidden-small>
+<ul class=uk-navbar-nav>
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+<div class="uk-navbar-flip uk-visible-small">
+<a href=#offcanvas class=uk-navbar-toggle data-uk-offcanvas></a>
+</div>
+</nav>
+</div>
+<div id=content>
+<main id=tm-content class=tm-content>
+<article class=uk-article>
+<div class="tm-article-featured-image uk-cover-background" style=background-image:url(/img/2021/05/infra-002.png)></div>
+<div class="tm-article-content uk-position-relative">
+<div class="tm-article-date uk-text-center">
+<span class=tm-article-date-day>
+23
+</span>
+<span class=tm-article-date-month>
+May
+</span>
+</div>
+<h1 class=uk-article-title>CIT - Build CDK Infrastructure Testing - Part 1 - Terratest and the Integrated Integration</h1>
+<p class=uk-article-meta>
+Written by
+Gernot Glawe
+</p>
+<div class=uk-margin>
+<h1 id=heading></h1>
+<p>TL;DR You don`t need a DSL to do easy integration testing. With CDK available in go, infrastructure test can be programmed with GO packages easily.</p>
+<h2 id=motivation-for-cit-cdk-infrastructure-testing>Motivation for CIT-CDK Infrastructure Testing</h2>
+<p><img src=/img/2021/05/pyramid1.png alt>
+<strong>Basic Test Pyramid</strong></p>
+<p>On top of the test pyramid are the End-To-End test. For a website that would mean - will the (end) user of the site will get see a proper HTML page or not.</p>
+<p>With DevOps and IaC - Infrastructure as Code - the application is not separated from the infrastructure anymore. The application itself relies on the infrastructure.
+So to have a running application and a successful End-To-End test, application <em>and</em> infrastructure must be tested and work.</p>
+<p>So we have an application and and infrastructure side of the pyramid.</p>
+<p><img src=/img/2021/05/pyramid-intergrated.png alt>
+<strong>Divided Test Pyramid</strong></p>
+<p>To test the infrastructure End-To-End we have to decouple the application from the infrastructure. On way to do this is to deploy a minimal web application - a web server with a testable response - to fully test the infrastructure.</p>
+<h2 id=integration-on-the-app-side>Integration on the app side</h2>
+<p><img src=/img/2021/05/pyramid-app.png alt>
+<strong>Application Development Testing</strong></p>
+<p>During development the unit test should be performed multiple times, at least before each commit to code repository. So they should be as atomic as possible and performing fast.</p>
+<p>If multiple services or frontend and backend work together, the cooperation is to be tested in the integration tests. Usually they take more time and will be performed in a CI/CD pipeline.</p>
+<p>The End-to-End test just checks if everything works together. It does not check whether the application is maintainable or flexible or understandable.
+For development, extensibility and refactoring and a good unit test coverage is helpful.</p>
+<h2 id=integration-on-the-cdk-side>Integration on the CDK side</h2>
+<p><img src=/img/2021/05/pyramid-cdk.png alt>
+<strong>Infrastructure Development Testing</strong></p>
+<p>You start an CDK development with(*):</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>cdk init app --language<span style=color:#666>=</span>yourlanguage
+</code></pre></div><p>The Unit test generated by this scaffolding just check, whether the right the CloudFormation (Cfn) templates are generated.</p>
+<p>This is useful, if you are not sure about the generated Cfn-template. For instances if you create new constructs. But not so useful with standard constructs.</p>
+<p>For instance, this is a part of the generated CDK go code:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>awssns.<span style=color:#00f>NewTopic</span>(stack, jsii.<span style=color:#00f>String</span>(<span style=color:#ba2121>&#34;MyTopic&#34;</span>), <span style=color:#666>&amp;</span>awssns.TopicProps{
+		DisplayName: jsii.<span style=color:#00f>String</span>(<span style=color:#ba2121>&#34;MyCoolTopic&#34;</span>),
+	})
+</code></pre></div><p>A SNS topic is created.</p>
+<p>With the generation of the SNS Topic, the generated test code checks the proper creation of an SNS CloudFormation Topic:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>	template <span style=color:#666>:=</span> gjson.<span style=color:#00f>ParseBytes</span>(bytes)
+	displayName <span style=color:#666>:=</span> template.<span style=color:#00f>Get</span>(<span style=color:#ba2121>&#34;Resources.MyTopic86869434.Properties.DisplayName&#34;</span>).<span style=color:#00f>String</span>()
+	assert.<span style=color:#00f>Equal</span>(t, <span style=color:#ba2121>&#34;MyCoolTopic&#34;</span>, displayName)
+</code></pre></div><p>This is only useful if you are unsure, whether the <strong>awssns</strong> constructs works. But this is tested in the <strong>awssns.NewTopc</strong> construct itself.</p>
+<p>Have a look at <a href=https://github.com/aws/aws-cdk/blob/master/packages/%40aws-cdk/aws-sns/test/test.sns.ts>Github CDK SNS</a>:</p>
+<p><strong>Code Snippet from <code>aws-cdk/packages/@aws-cdk/aws-sns/test/test.sns.ts </code></strong></p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ts data-lang=ts>expect(stack).toMatch({
+        <span style=color:#ba2121>&#39;Resources&#39;</span><span style=color:#666>:</span> {
+          <span style=color:#ba2121>&#39;MyTopic86869434&#39;</span><span style=color:#666>:</span> {
+            <span style=color:#ba2121>&#39;Type&#39;</span><span style=color:#666>:</span> <span style=color:#ba2121>&#39;AWS::SNS::Topic&#39;</span>,
+</code></pre></div><p>So we are testing twice.</p>
+<p>Again, if you are developing a new construct or if you create resources dynamically it could also be helpful to add test. But not if you just test &ldquo;an sns construct will generate an sns cloudformation resource&rdquo;.</p>
+<h3 id=do-not-test-aws-basic-service-functionality-but-the-integrations>Do not test AWS basic service functionality, but the integrations</h3>
+<p>You also should not test that an AWS service base functionality works, but you should test if your configuration works.</p>
+<p>For example, you do not have to test that a <strong>Security Group</strong> which is open on port 80 really opens port 80. But with a more complex scenario with several groups and several servers, it could make sense to test that server <strong>A</strong> really can connect to server <strong>B</strong> and that only on this very port.</p>
+<p>So I think that testing the integration of the created infrastructure should be part of the automated testing. I will call this &ldquo;CIT&rdquo; - CDK Infrastructure Testing.</p>
+<h2 id=challenges-for-cit>Challenges for CIT</h2>
+<p>To achieve this, we have to face some challenges:</p>
+<ul>
+<li>Mapping of logical and physical IDs</li>
+<li>Finding or creating Test Libraries</li>
+<li>Testing with context</li>
+</ul>
+<h3 id=logical---physical-mapping>Logical - Physical Mapping</h3>
+<p><img src=/img/2021/05/infra-003.png alt=Mapping></p>
+<p>When you create infrastructure with CDK or CloudFormation you define names for your Constructs. CDK generates Resource names from the construct names. These Resource names are called <strong>logical IDs</strong> or <strong>Logical Names</strong>. In the CDK code, an instance can be titled &ldquo;Web-Server&rdquo;.</p>
+<p><strong>Construct name MyTopic</strong></p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>awssns.<span style=color:#00f>NewTopic</span>(stack, jsii.<span style=color:#00f>String</span>(<span style=color:#ba2121>&#34;MyTopic&#34;</span>), <span style=color:#666>&amp;</span>awssns.TopicProps{
+	DisplayName: jsii.<span style=color:#00f>String</span>(<span style=color:#ba2121>&#34;MyCoolTopic&#34;</span>),
+})
+</code></pre></div><p><strong>Resource name MyTopic86869434 in Cfn</strong></p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:green;font-weight:700>Resources</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>MyTopic86869434</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>    </span><span style=color:green;font-weight:700>Type</span>:<span style=color:#bbb> </span>AWS::SNS::Topic<span style=color:#bbb>
+</span><span style=color:#bbb>    </span><span style=color:green;font-weight:700>Properties</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:green;font-weight:700>DisplayName</span>:<span style=color:#bbb> </span>MyCoolTopic<span style=color:#bbb>
+</span><span style=color:#bbb>    </span><span style=color:green;font-weight:700>Metadata</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:green;font-weight:700>aws:cdk:path</span>:<span style=color:#bbb> </span>GocdkStack/MyTopic/Resource<span style=color:#bbb>
+</span></code></pre></div><p>When CloudFormation creates the resource it will give it an ID like <code>GocdkStack-MyTopic86869434-1EQYGNEXFF12T</code>. This is called the <strong>Physical ID</strong> Each call to an AWS API concerning this Topic (like <code>aws sns list-subscriptions-by-topic</code>) will need to have the <strong>Physical ID</strong>.</p>
+<p><strong>Call to get information about the Topic resource</strong></p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws sns list-subscriptions-by-topic --topic-arn <span style=color:#ba2121>&#34;arn:aws:sns:eu-central-1:669453403305:GocdkStack-MyTopic86869434-1EQYGNEXFF12T&#34;</span>
+<span style=color:#666>{</span>
+    <span style=color:#ba2121>&#34;Subscriptions&#34;</span>: <span style=color:#666>[]</span>
+<span style=color:#666>}</span>
+</code></pre></div><p><strong>Physical ID GocdkStack-MyTopic86869434-1EQYGNEXFF12T in deployed Stack</strong></p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
+	<span style=color:green;font-weight:700>&#34;LogicalResourceId&#34;</span>: <span style=color:#ba2121>&#34;MyTopic86869434&#34;</span>,
+	<span style=color:green;font-weight:700>&#34;PhysicalResourceId&#34;</span>: <span style=color:#ba2121>&#34;arn:aws:sns:eu-central-1:669453403305:GocdkStack-MyTopic86869434-1EQYGNEXFF12T&#34;</span>,
+	<span style=color:green;font-weight:700>&#34;ResourceType&#34;</span>: <span style=color:#ba2121>&#34;AWS::SNS::Topic&#34;</span>
+}
+</code></pre></div><p>So test running on the physical side need to have the physical ID.</p>
+<p>My goal for the CIT is to provide helper functions for an easy mapping of Construct names and physical IDs. For the quick start we will create a SystemsManager Parameter Store parameter for the physical id.</p>
+<h3 id=service-test-libraries>Service Test Libraries</h3>
+<p>A general distinction for testing libraries is if you want to use a specialized DSL (domain-specific language) or using low levels calls with the AWS SDK.</p>
+<p>An example for an testing DSL is <a href=https://docs.chef.io/inspec/resources/aws_alb/>Chef InSpec</a></p>
+<p>E.g. an Application Load balancer can be tested with:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ruby data-lang=ruby>describe aws_alb(<span style=color:#ba2121>&#39;arn:aws:elasticloadbalancing&#39;</span>) <span style=color:green;font-weight:700>do</span>
+  it { should exist }
+<span style=color:green;font-weight:700>end</span>
+
+describe aws_alb(<span style=color:#19177c>load_balancer_arn</span>: <span style=color:#ba2121>&#39;arn:aws:elasticloadbalancing&#39;</span>) <span style=color:green;font-weight:700>do</span>
+  it { should exist }
+<span style=color:green;font-weight:700>end</span>
+</code></pre></div><p>Or the generated SNS Topic could be tested in InSpec with:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ruby data-lang=ruby>describe aws_sns_topic(<span style=color:#ba2121>&#39;arn:aws:sns:*::my-topic-name&#39;</span>) <span style=color:green;font-weight:700>do</span>
+  it { should exist }
+<span style=color:green;font-weight:700>end</span>
+</code></pre></div><p>The plus of such an generic approach is an easy start. The downside is that the DSL is limited and extensions of the DSL is more complicated. And as new AWS services types keep coming, it is very hard work keeping creating new DSL items for each new service type.</p>
+<p>Between DSL and totally relying on coding with pure SDK is <a href=https://terratest.gruntwork.io/docs/getting-started/quick-start/>terratest</a>. This is an GO library aimed at helping tests for terraform generated infrastructure. As the infrastructure does not care about how its generated, its quite easy to use it for Cfn/CDK generated resources also. Some AWS helper functions for testing you will find in the module <a href=https://pkg.go.dev/github.com/gruntwork-io/terratest@v0.34.7/modules/aws>terratest/aws</a>.</p>
+<p>I have used <code>terratest</code> now in a handful of projects and found it quite useful. As it uses the AWS GO SDK, you may easily add AWS GO SDK API Calls and have access to the whole AWS API.
+<code>terratest</code> has code for checking SNS Topic existance <a href=https://github.com/gruntwork-io/terratest/blob/master/modules/aws/sns_test.go>here</a></p>
+<p>Creating a test for SNS with the GO SDK would be easy as adding a few lines in this GO V2 SNS Example: <a href=https://aws.github.io/aws-sdk-go-v2/docs/code-examples/sns/listtopics/>GO SNS</a>.</p>
+<h3 id=context-aware-testing>Context aware Testing</h3>
+<p>Another challenge is that some resources under the test microscope only work when its linked to another resource, which I will call <em>agents</em>. This is the case with SecurityGroups and IAM policies.</p>
+<h4 id=vpcnetwork-context>VPC/Network Context</h4>
+<p>Without attaching an Security Group to an ENI Elastic Network Interface you may not check whether it really works.</p>
+<p>2018 I used Chef kitchen/inspec in this (german) blogpost to create a test and a testee instance to test routing with transit gateway:
+<a href=https://aws-blog.de/2018/12/mit-allen-verbunden-teil-1.html>https://aws-blog.de/2018/12/mit-allen-verbunden-teil-1.html</a></p>
+<p>Another example of inspec with Systems Manager is described here in Thomas post:
+<a href=https://aws-blog.de/2020/10/air-gapped-compliance-scans-with-inspec.html>https://aws-blog.de/2020/10/air-gapped-compliance-scans-with-inspec.html</a></p>
+<h4 id=iam-context>IAM Context</h4>
+<p>If you want to test the results of IAM policies, you need to have en entity which has these policies attached.
+With the complexity and feature rich IAM policy json/yaml data, testing could often help to get clarity here.</p>
+<p>We will look at the agent problem later.</p>
+<p>Now we start with a working first example.</p>
+<h2 id=cit-usecase-end-to-end-testing-an-cdk-generated-load-balancer-web-server>CIT UseCase: End to End Testing an CDK generated Load Balancer Web Server</h2>
+<p>I want to code an End to End test for an CDK generated webserver with Application Load Balancer.</p>
+<h3 id=the-application>The Application</h3>
+<p><img src=/img/2021/05/infra-001.png alt=Mapping></p>
+<p>To start right away without additional libraries, i just write the physical ID, or the dns name in this example to the Systems Manager (SSM) Parameter Store. With that the code has a mapping between the logical and physical ID.</p>
+<p>The Load Balancer GO CDK code:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>	lb <span style=color:#666>:=</span> elasticloadbalancingv2.<span style=color:#00f>NewApplicationLoadBalancer</span>(stack, aws.<span style=color:#00f>String</span>(<span style=color:#ba2121>&#34;LB&#34;</span>),
+	<span style=color:#666>&amp;</span>elasticloadbalancingv2.ApplicationLoadBalancerProps{
+		Vpc:                myVpc,
+		InternetFacing:     aws.<span style=color:#00f>Bool</span>(<span style=color:green;font-weight:700>true</span>),
+		LoadBalancerName:   aws.<span style=color:#00f>String</span>(<span style=color:#ba2121>&#34;ALBGODEMO&#34;</span>),
+	},
+	)
+</code></pre></div><p>Output the Url to Parameter Store:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>ssm.<span style=color:#00f>NewStringParameter</span>(stack, aws.<span style=color:#00f>String</span>(<span style=color:#ba2121>&#34;govpc&#34;</span>),
+		<span style=color:#666>&amp;</span>ssm.StringParameterProps{
+			Description:    aws.<span style=color:#00f>String</span>(<span style=color:#ba2121>&#34;alb&#34;</span>),
+			ParameterName:  aws.<span style=color:#00f>String</span>(<span style=color:#ba2121>&#34;/cdk-templates/go/alb_ec2&#34;</span>),
+			StringValue:    lb.<span style=color:#00f>LoadBalancerDnsName</span>(),
+		},
+	)
+</code></pre></div><h3 id=test-code>Test Code</h3>
+<p><code>terratest</code> provides an easy method to test http calls with the <strong>http_helper</strong></p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:green;font-weight:700>func</span> <span style=color:#00f>TestALBRequest</span>(t <span style=color:#666>*</span>testing.T) {
+	
+	storedUrl <span style=color:#666>:=</span> aws.<span style=color:#00f>GetParameter</span>(t,region,<span style=color:#ba2121>&#34;/cdk-templates/go/alb_ec2&#34;</span>)
+
+	url <span style=color:#666>:=</span> fmt.<span style=color:#00f>Sprintf</span>(<span style=color:#ba2121>&#34;http://%s&#34;</span>, storedUrl)
+
+	sleepBetweenRetries, <span style=color:#b00040>error</span> <span style=color:#666>:=</span> time.<span style=color:#00f>ParseDuration</span>(<span style=color:#ba2121>&#34;10s&#34;</span>)
+	<span style=color:green;font-weight:700>if</span> <span style=color:#b00040>error</span> <span style=color:#666>!=</span> <span style=color:green;font-weight:700>nil</span> {
+		<span style=color:green>panic</span>(<span style=color:#ba2121>&#34;Can&#39;t parse duration&#34;</span>)
+	}
+	http_helper.<span style=color:#00f>HttpGetWithRetry</span>(t, url, <span style=color:green;font-weight:700>nil</span>, <span style=color:#666>200</span> , <span style=color:#ba2121>&#34;&lt;h1&gt;hello world&lt;/h1&gt;&#34;</span>, <span style=color:#666>20</span>, sleepBetweenRetries)
+	
+}
+</code></pre></div><h3 id=run-test-and-destroy-script>Run, Test and Destroy script</h3>
+<p>In the <a href=https://github.com/tecracer/cdk-templates/tree/master/go/alb_ec2>github repo</a>, you see all scripts defined in the <code>Taskfile.yml</code>:</p>
+<h4 id=taskfile-settings>Taskfile settings</h4>
+<ol>
+<li>In the moment CDK version going wild, so I use a fixed CDK version number:</li>
+</ol>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:green;font-weight:700>vars</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>version</span>:<span style=color:#bbb> </span>v2.0.0-rc.3<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>constructs</span>:<span style=color:#bbb> </span>v10.0.5<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>npxoptions</span>:<span style=color:#bbb> </span>-<span style=color:green;font-weight:700>y</span><span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:#00f;font-weight:700>...</span><span style=color:#bbb>
+</span><span style=color:#bbb></span>npx {{.npxoptions}} cdk@{{.version}}<span style=color:#bbb>
+</span></code></pre></div><ol start=2>
+<li>Deploy</li>
+</ol>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#bbb>      </span>- npx {{.npxoptions}} cdk@{{.version}}  deploy --require-approval never --profile $AWSUME_PROFILE<span style=color:#bbb>
+</span></code></pre></div><ol start=3>
+<li>Test</li>
+</ol>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#bbb>    </span>- go test<span style=color:#bbb>
+</span></code></pre></div><p>or use <code>go test -v</code> for chattyness.</p>
+<ol start=4>
+<li>Destroy</li>
+</ol>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#bbb>      </span>- <span style=color:#bbb> </span>npx {{.npxoptions}} cdk@{{.version}}  destroy --force --profile $AWSUME_PROFILE<span style=color:#bbb>
+</span></code></pre></div><p>Calling the deploy-test-destroy cycle on different settings:</p>
+<h3 id=fail-1>FAIL 1</h3>
+<p>If the stack is not created yet, the test fails:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash> go <span style=color:green>test</span>
+--- FAIL: TestALBRequest <span style=color:#666>(</span>0.41s<span style=color:#666>)</span>
+    ssm.go:18:
+        	Error Trace:	ssm.go:18
+        	            				alb_ec2_test.go:16
+        	Error:      	Received unexpected error:
+        	            	ParameterNotFound:
+        	            		status code: 400, request id: 6576de83-ff43-4817-b7c6-d337637d0542
+        	Test:       	TestALBRequest
+FAIL
+<span style=color:green>exit</span> status <span style=color:#666>1</span>
+FAIL	alb_ec2	0.875s
+</code></pre></div><p>This is because the SSM parameter does not exist - <code>ParameterNotFound</code>.</p>
+<h3 id=fail-2>Fail 2</h3>
+<p>If I forgot to start the httpd in the userdata script, the test will also fail:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>yum update
+yum install -y httpd
+systemctl <span style=color:green>enable</span> httpd
+<span style=color:green>echo</span> <span style=color:#ba2121>&#34;&lt;h1&gt;hello world&lt;/h1&gt;&#34;</span> &gt; /var/www/html/index.html
+</code></pre></div><p><strong>test</strong>:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>Stack ARN:
+arn:aws:cloudformation:eu-central-1:669453403305:stack/AlbInstStack/ae48b400-b94e-11eb-9fc8-0635bbfae99c
+task: go <span style=color:green>test</span>
+TestALBRequest 2021-05-20T11:39:44+02:00 retry.go:91: HTTP GET to URL http://ALBGODEMO-1441991621.eu-central-1.elb.amazonaws.com
+TestALBRequest 2021-05-20T11:39:44+02:00 http_helper.go:32: Making an HTTP GET call to URL http://ALBGODEMO-1441991621.eu-central-1.elb.amazonaws.com
+TestALBRequest 2021-05-20T11:39:44+02:00 retry.go:103: HTTP GET to URL http://ALBGODEMO-1441991621.eu-central-1.elb.amazonaws.com returned an error: Validation failed <span style=color:green;font-weight:700>for</span> URL http://ALBGODEMO-1441991621.eu-central-1.elb.amazonaws.com. Response status: 502. Response body:
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;502 Bad Gateway&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+&lt;center&gt;&lt;h1&gt;502 Bad Gateway&lt;/h1&gt;&lt;/center&gt;
+...
+&lt;/html&gt;. Sleeping <span style=color:green;font-weight:700>for</span> 10s and will try again.
+</code></pre></div><p>The SSM parameter exists, points to the right ALB, but the webserver is not running.</p>
+<p>With the retry cycle I make sure that CloudFormation has enough time to create the resources.</p>
+<h3 id=ok>OK</h3>
+<p>If I fix the userdata, created the right alb etc the test will pass:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>task <span style=color:green>test</span>
+task: go <span style=color:green>test</span>
+TestALBRequest 2021-05-16T16:56:25+02:00 retry.go:91: HTTP GET to URL http://ALBGODEMO-465149672.eu-central-1.elb.amazonaws.com
+TestALBRequest 2021-05-16T16:56:25+02:00 http_helper.go:32: Making an HTTP GET call to URL http://ALBGODEMO-465149672.eu-central-1.elb.amazonaws.com
+PASS
+ok  	alb_ec2	0.771s
+</code></pre></div><p>This is a simple example. I did the same thing with IIS on windows and Powershell Scripting - thats more than four lines in the <code>UserData</code> and this test really helped me.</p>
+<p>You can run the test cycle with <code>task cit</code> from the <code>github</code> code.</p>
+<h3 id=whole-deploy-test-destroy-cycle>Whole Deploy-Test-Destroy cycle</h3>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>task cit
+...
+AlbInstStack: deploying...
+<span style=color:#666>[</span>0%<span style=color:#666>]</span> start: Publishing 4ad61576fc9e67b1526ec28726d554e5177af3c40a96dce030832ddf21f2eda2:669453403305-eu-central-1
+<span style=color:#666>[</span>100%<span style=color:#666>]</span> success: Published 4ad61576fc9e67b1526ec28726d554e5177af3c40a96dce030832ddf21f2eda2:669453403305-eu-central-1
+AlbInstStack: creating CloudFormation changeset...
+<span style=color:#666>[</span>██████████████████████████████████████████████████████████<span style=color:#666>]</span> <span style=color:#666>(</span>48/48<span style=color:#666>)</span>
+
+ ✅  AlbInstStack
+Stack ARN:
+arn:aws:cloudformation:eu-central-1:669453403305:stack/AlbInstStack/a2bc6830-bba0-11eb-b5db-0ad1bb830c16
+task: go <span style=color:green>test</span>
+TestALBRequest 2021-05-23T10:31:01+02:00 retry.go:91: HTTP GET to URL http://ALBGODEMO-1159953432.eu-central-1.elb.amazonaws.com
+TestALBRequest 2021-05-23T10:31:01+02:00 http_helper.go:32: Making an HTTP GET call to URL http://ALBGODEMO-1159953432.eu-central-1.elb.amazonaws.com
+PASS
+ok  	alb_ec2	1.622s
+Profile ggtrcadmin
+task: npx -y cdk@v2.0.0-rc.3  destroy --force --profile <span style=color:#19177c>$AWSUME_PROFILE</span>
+AlbInstStack: destroying...
+10:31:19 | DELETE_IN_PROGRESS   | AWS::CloudFormation::Stack                | AlbInstStack
+...
+ ✅  AlbInstStack: destroyed
+</code></pre></div><h2 id=using-stages-for-infrastructure-testing-vs-integrated-end-to-end-test>Using stages for Infrastructure testing vs Integrated End-to-End Test</h2>
+<p>With the <code>userdata</code> in the example the webserver just responded with a testable response.
+In order to distinguish between infrastructure test and app+infrastructure end-to-end test, context variables can be used.</p>
+<p>The <a href=https://docs.aws.amazon.com/cdk/latest/guide/get_context_var.html>CDK documentation</a> shows you how to do it:</p>
+<p>With a flag &ldquo;stage&rdquo;, which holds values like &lsquo;[dev|prod] you switch between <em>test</em> userdata and <em>production</em> userdata:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>	stage <span style=color:#666>:=</span> scope.<span style=color:#00f>Node</span>().<span style=color:#00f>TryGetContext</span>(aws.<span style=color:#00f>String</span>(<span style=color:#ba2121>&#34;stage&#34;</span>))
+</code></pre></div><p>And check the flag in your code like:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>	userdataFileName <span style=color:#666>:=</span> <span style=color:#ba2121>&#34;userdata/webserver-infratest.sh&#34;</span>
+	<span style=color:green;font-weight:700>if</span> stage <span style=color:#666>==</span> <span style=color:#ba2121>&#34;prod&#34;</span>{
+		userdataFileName=<span style=color:#ba2121>&#34;userdata/webserver-production.sh&#34;</span>
+	}
+</code></pre></div><p>For prod stage with: <code>cdk synth -c stage=prod</code> now you get:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#bbb>      </span><span style=color:green;font-weight:700>UserData</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:green;font-weight:700>Fn::Base64</span>:<span style=color:#bbb> </span>|-<span style=color:#ba2121;font-style:italic>
+</span><span style=color:#ba2121;font-style:italic>          #!/bin/bash
+</span><span style=color:#ba2121;font-style:italic>          yum update
+</span><span style=color:#ba2121;font-style:italic>          yum install -y httpd
+</span><span style=color:#ba2121;font-style:italic>          systemctl start httpd
+</span><span style=color:#ba2121;font-style:italic>          systemctl enable httpd
+</span><span style=color:#ba2121;font-style:italic>          echo &#34;&lt;h1&gt;Styled Production Page&lt;/h1&gt; &lt;p&gt; lorem ipso&lt;/p&gt;&#34; &gt; /var/www/html/index.html</span><span style=color:#bbb>          
+</span></code></pre></div><p>Whereas with <code>cdk synth -c stage=dev</code> you get :</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#bbb>     </span><span style=color:green;font-weight:700>UserData</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:green;font-weight:700>Fn::Base64</span>:<span style=color:#bbb> </span>|-<span style=color:#ba2121;font-style:italic>
+</span><span style=color:#ba2121;font-style:italic>          #!/bin/bash
+</span><span style=color:#ba2121;font-style:italic>          yum update
+</span><span style=color:#ba2121;font-style:italic>          yum install -y httpd
+</span><span style=color:#ba2121;font-style:italic>          systemctl start httpd
+</span><span style=color:#ba2121;font-style:italic>          systemctl enable httpd
+</span><span style=color:#ba2121;font-style:italic>          echo &#34;&lt;h1&gt;hello world&lt;/h1&gt;&#34; &gt; /var/www/html/index.html</span><span style=color:#bbb>          
+</span></code></pre></div><p>Which would deploy a testable instance and webserver.</p>
+<h2 id=other-cdk-languages>Other CDK languages</h2>
+<p>This approach involves programming <em>only</em> the &ldquo;cit&rdquo; infrastructure test in GO. Here is the same example with the TypeScript CDK LoadBalancer and cit in GO:</p>
+<p><a href=https://github.com/tecracer/cdk-templates/tree/master/typescript/alb_ec2>CDK example template LoadBalancer EC2</a>.</p>
+<p>By using the SystemsManager parameter store as a language-independent parameter transfer, we are polyglot.</p>
+<h2 id=conclusion>Conclusion</h2>
+<p>It was really easy (30 lines of go code) to test a CDK generated webserver. This approach can be used for all CDK languages. In the next part I will show a GO module for directly accessing physical IDs via the CDK name aka logical ID.</p>
+<h2 id=check-it-out>Check it out</h2>
+<p>This code is available at the tecRacer Github &ldquo;cdk-templates&rdquo; repository:</p>
+<p><a href=https://github.com/tecracer/cdk-templates/tree/master/go/alb_ec2>https://github.com/tecracer/cdk-templates/tree/master/go/alb_ec2</a></p>
+<p>For remarks, discussion, chatting please contact me on twitter @megaproaktiv.</p>
+<p>I hope these thought can be useful for you next project!</p>
+<h2 id=notes>Notes</h2>
+<h3 id=-create-a-go-cdk-v2-application>(*) Create a GO CDK V2 Application</h3>
+<p>To build a GO CDK application, you currently have to create the template in cdk v1 and then manually upgrade the modules to CDK V2.</p>
+<ol>
+<li>Create go app</li>
+</ol>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:green>alias</span> <span style=color:#19177c>cdk1</span><span style=color:#666>=</span><span style=color:#ba2121>&#39;npx cdk@v1.105.0&#39;</span>
+cdk1 init app --language<span style=color:#666>=</span>go
+</code></pre></div><ol start=2>
+<li>Migrate the modules, here I have described how to:</li>
+</ol>
+<p><a href=https://dev.to/megaproaktiv/migrating-to-aws-cdk-v2-the-missing-go-manual-1ck2>Migrating to AWS CDK v2 - the missing GO manual</a></p>
+<ol start=3>
+<li>Switch to CDK V2</li>
+</ol>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:green>alias</span> <span style=color:#19177c>cdk</span><span style=color:#666>=</span><span style=color:#ba2121>&#39;npx cdk@v2.0.0-rc.4&#39;</span>
+cdk synth
+</code></pre></div>
+</div>
+</div>
+</article>
+<article class=uk-article>
+<div class=container>
+<section class=author-box itemprop=author itemscope itemtype=https://schema.org/Person>
+</section>
+</div>
+</article>
+</main>
+</div>
+<div id=tm-footer class=tm-footer>
+<div id=tm-footer class="tm-footer tm-footer-margin-top">
+<div class="uk-panel uk-panel-space uk-text-center">
+<p>Copyright © 2018-today by <a href=https://chef.tecracer.de/ target=_blank>tecRacer</a></p>
+</div>
+</div>
+</div><div id=offcanvas class=uk-offcanvas aria-hidden=true>
+<div class="uk-offcanvas-bar uk-offcanvas-bar-flip">
+<div class="uk-panel uk-text-center">
+<a href=https://tecracer-chef.github.io/></a>
+<img src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+</div>
+<ul class="uk-nav uk-nav-offcanvas">
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+</div>
+</div>
+</body>
+</html>

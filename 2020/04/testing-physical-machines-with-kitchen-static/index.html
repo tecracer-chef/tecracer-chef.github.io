@@ -1,11 +1,95 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><title>Testing Physical Machines with kitchen-static | tecRacer Chef</title><meta name=viewport content="width=device-width,initial-scale=1"><link rel=canonical href=https://tecracer-chef.github.io/2020/04/testing-physical-machines-with-kitchen-static/><meta http-equiv=content-language content="en-us"><meta property="og:type" content="website"><meta property="og:site_name" content="tecRacer Chef"><meta property="og:title" content="Testing Physical Machines with kitchen-static"><meta property="og:url" content="https://tecracer-chef.github.io/2020/04/testing-physical-machines-with-kitchen-static/"><meta property="og:image" content="https://tecracer-chef.github.io/images/"><meta name=twitter:title content="tecRacer Chef"><meta name=twitter:url content="https://tecracer-chef.github.io/2020/04/testing-physical-machines-with-kitchen-static/"><meta name=twitter:image content="https://tecracer-chef.github.io/images/"><meta name=twitter:card content><link rel=alternate href=/blog/feed title="Patrick Schaumburg" type=application/rss+xml><link href=https://tecracer-chef.github.io/css/theme.css rel=stylesheet><script src=https://tecracer-chef.github.io/js/jquery.min.js></script><script src=https://tecracer-chef.github.io/js/uikit.min.js></script><script src=https://tecracer-chef.github.io/js/fa-all.js></script></head><body><div class="uk-container uk-container-center"><div class=tm-header><div class="tm-toolbar uk-clearfix uk-hidden-small"><div class=uk-float-right><div class=uk-panel><ul class=uk-subnav><li><a href=https://github.com/tecracer-chef class="uk-icon-hover uk-icon-small uk-icon-github" target=_blank></a></li><li><a href=https://twitter.com/tecracer class="uk-icon-hover uk-icon-small uk-icon-twitter" target=_blank></a></li><li><a href=https://www.xing.com/companies/tecracergmbh%26co.kg class="uk-icon-hover uk-icon-small uk-icon-xing" target=_blank></a></li><li><a href=https://www.linkedin.com/company/tecracer-group/ class="uk-icon-hover uk-icon-small uk-icon-linkedin" target=_blank></a></li><li><a href=https://www.facebook.com/tecRacer class="uk-icon-hover uk-icon-small uk-icon-facebook" target=_blank></a></li></ul></div></div></div><nav class=uk-navbar><a class=uk-navbar-brand href=/><img class="tm-logo uk-responsive-height uk-hidden-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
-<img class="tm-logo-small uk-responsive-height uk-visible-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt></a><div class=uk-hidden-small><ul class=uk-navbar-nav><li><a href=/>Blog</a></li><li><a href=/authors>Authors</a></li><li><a href=/github/github-prs.html>Pull Requests</a></li></ul></div><div class="uk-navbar-flip uk-visible-small"><a href=#offcanvas class=uk-navbar-toggle data-uk-offcanvas></a></div></nav></div><div id=content><main id=tm-content class=tm-content><article class=uk-article><div class="tm-article-featured-image uk-cover-background" style=background-image:url(/img/2020/04/stef-westheim-ZGH6xd3usAs-unsplash.jpg)></div><div class="tm-article-content uk-position-relative"><div class="tm-article-date uk-text-center"><span class=tm-article-date-day>28</span>
-<span class=tm-article-date-month>Apr</span></div><h1 class=uk-article-title>Testing Physical Machines with kitchen-static</h1><p class=uk-article-meta>Written by
-<a target=_self title="Thomas Heinen's Author Profile SINGLE.HTML" href=/authors/thomas-heinen data-original-title="Author's Profile">Thomas Heinen</a></p><div class=uk-margin><h1 id=testing-on-physical-machines-with-kitchen-static>Testing on Physical Machines with kitchen-static</h1><p>This article shows how to work with Test Kitchen on physical machines using the <a href=https://github.com/tecracer-theinen/kitchen-static>kitchen-static Driver</a>. If you need to deliver a product (bundle of server and software) instead of just configuration, some tasks cannot be run on virtual machines alone but need testing on actual hardware.</p><p>The need for testing on physical machines comes from a current project, where physical servers are part of a large industrial solution and are provisioned with Chef.</p><p>As with all projects, one should keep the <a href=https://12factor.net/dev-prod-parity>Dev/Prod Parity Principle</a> in mind, which states that development and production environment should be as similar as possible. For example, physical systems include components which are not available in your usual VMware- or AWS-based environment: Installation of vendor specific drivers, configuration of hardware components (ILO, BMC, &mldr;) or even setting certain types of Windows Network Teaming.</p><h2 id=kitchen-static>kitchen-static</h2><p>Over a year ago, this kitchen driver was created to allow our first steps on HP Gen9 servers. It was easy enough, as Test Kitchen already comes with the <code>proxy</code> driver. Upon checking <a href=https://github.com/test-kitchen/test-kitchen/blob/master/lib/kitchen/driver/proxy.rb>its source code</a> it became clear that this driver was outdated and poorly maintained. As it was obvious that we are dealing with a total niche case here, the decision to maintain a custom driver was easy.</p><p>Installation of the driver is very straightforward as it has no external dependencies and is available on RubyGems:</p><div class=highlight><pre style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>gem install kitchen-static
-</code></pre></div><p>Now, just change your <code>kitchen.yml</code> accordingly. I prefer having my platform specifics in a separate file <code>kitchen.static.yml</code>:</p><div class=highlight><pre style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:green;font-weight:700>driver</span>:<span style=color:#bbb>
+<!doctype html><html lang=en>
+<head>
+<meta charset=utf-8>
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<title>Testing Physical Machines with kitchen-static | tecRacer Chef</title>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<link rel=canonical href=https://tecracer-chef.github.io/2020/04/testing-physical-machines-with-kitchen-static/>
+<meta http-equiv=content-language content="en-us">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="tecRacer Chef">
+<meta property="og:title" content="Testing Physical Machines with kitchen-static">
+<meta property="og:url" content="https://tecracer-chef.github.io/2020/04/testing-physical-machines-with-kitchen-static/">
+<meta property="og:image" content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:title content="tecRacer Chef">
+<meta name=twitter:url content="https://tecracer-chef.github.io/2020/04/testing-physical-machines-with-kitchen-static/">
+<meta name=twitter:image content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:card content>
+<link rel=alternate href=/blog/feed title="Patrick Schaumburg" type=application/rss+xml>
+<link href=https://tecracer-chef.github.io/css/theme.css rel=stylesheet>
+<script src=https://tecracer-chef.github.io/js/jquery.min.js></script>
+<script src=https://tecracer-chef.github.io/js/uikit.min.js></script>
+<script src=https://tecracer-chef.github.io/js/fa-all.js></script>
+</head>
+<body>
+<div class="uk-container uk-container-center">
+<div class=tm-header>
+<div class="tm-toolbar uk-clearfix uk-hidden-small">
+<div class=uk-float-right>
+<div class=uk-panel>
+<ul class=uk-subnav>
+<li><a href=https://github.com/tecracer-chef class="uk-icon-hover uk-icon-small uk-icon-github" target=_blank></a></li>
+<li><a href=https://twitter.com/tecracer class="uk-icon-hover uk-icon-small uk-icon-twitter" target=_blank></a></li>
+<li><a href=https://www.xing.com/companies/tecracergmbh%26co.kg class="uk-icon-hover uk-icon-small uk-icon-xing" target=_blank></a></li>
+<li><a href=https://www.linkedin.com/company/tecracer-group/ class="uk-icon-hover uk-icon-small uk-icon-linkedin" target=_blank></a></li>
+<li><a href=https://www.facebook.com/tecRacer class="uk-icon-hover uk-icon-small uk-icon-facebook" target=_blank></a></li>
+</ul>
+</div>
+</div>
+</div>
+<nav class=uk-navbar>
+<a class=uk-navbar-brand href=/>
+<img class="tm-logo uk-responsive-height uk-hidden-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+<img class="tm-logo-small uk-responsive-height uk-visible-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+<div class=uk-hidden-small>
+<ul class=uk-navbar-nav>
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+<div class="uk-navbar-flip uk-visible-small">
+<a href=#offcanvas class=uk-navbar-toggle data-uk-offcanvas></a>
+</div>
+</nav>
+</div>
+<div id=content>
+<main id=tm-content class=tm-content>
+<article class=uk-article>
+<div class="tm-article-featured-image uk-cover-background" style=background-image:url(/img/2020/04/stef-westheim-ZGH6xd3usAs-unsplash.jpg)></div>
+<div class="tm-article-content uk-position-relative">
+<div class="tm-article-date uk-text-center">
+<span class=tm-article-date-day>
+28
+</span>
+<span class=tm-article-date-month>
+Apr
+</span>
+</div>
+<h1 class=uk-article-title>Testing Physical Machines with kitchen-static</h1>
+<p class=uk-article-meta>
+Written by
+<a target=_self title="Thomas Heinen's Author Profile SINGLE.HTML" href=/authors/thomas-heinen data-original-title="Author's Profile">Thomas Heinen</a>
+</p>
+<div class=uk-margin>
+<h1 id=testing-on-physical-machines-with-kitchen-static>Testing on Physical Machines with kitchen-static</h1>
+<p>This article shows how to work with Test Kitchen on physical machines using the <a href=https://github.com/tecracer-theinen/kitchen-static>kitchen-static Driver</a>. If you need to deliver a product (bundle of server and software) instead of just configuration, some tasks cannot be run on virtual machines alone but need testing on actual hardware.</p>
+<p>The need for testing on physical machines comes from a current project, where physical servers are part of a large industrial solution and are provisioned with Chef.</p>
+<p>As with all projects, one should keep the <a href=https://12factor.net/dev-prod-parity>Dev/Prod Parity Principle</a> in mind, which states that development and production environment should be as similar as possible. For example, physical systems include components which are not available in your usual VMware- or AWS-based environment: Installation of vendor specific drivers, configuration of hardware components (ILO, BMC, &mldr;) or even setting certain types of Windows Network Teaming.</p>
+<h2 id=kitchen-static>kitchen-static</h2>
+<p>Over a year ago, this kitchen driver was created to allow our first steps on HP Gen9 servers. It was easy enough, as Test Kitchen already comes with the <code>proxy</code> driver. Upon checking <a href=https://github.com/test-kitchen/test-kitchen/blob/master/lib/kitchen/driver/proxy.rb>its source code</a> it became clear that this driver was outdated and poorly maintained. As it was obvious that we are dealing with a total niche case here, the decision to maintain a custom driver was easy.</p>
+<p>Installation of the driver is very straightforward as it has no external dependencies and is available on RubyGems:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>gem install kitchen-static
+</code></pre></div><p>Now, just change your <code>kitchen.yml</code> accordingly. I prefer having my platform specifics in a separate file <code>kitchen.static.yml</code>:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:green;font-weight:700>driver</span>:<span style=color:#bbb>
 </span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>static<span style=color:#bbb>
 </span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>hostname</span>:<span style=color:#bbb> </span><span style=color:#666>198.51.100.14</span><span style=color:#bbb>
-</span></code></pre></div><p>If you have a machine at the given IP, your usual <code>kitchen converge</code> and <code>kitchen verify</code> commands work as intended.</p><h2 id=setup-and-tear-down>Setup and Tear Down</h2><p>As we are working with a physical machine which does not just vanish or pop into existence, we have to take care of not getting the machine messed up. After all, <code>kitchen create</code> and <code>kitchen destroy</code> just change a value in your local <code>.kitchen</code> directory and do not interact with the actual machine at all.</p><p>One decentralized solution are <a href=https://kitchen.ci/docs/reference/lifecycle-hooks/>Kitchen Lifecycle Hooks</a>. They have been added in <a href=https://github.com/test-kitchen/test-kitchen/blob/master/RELEASE_NOTES.md#test-kitchen-1230-release-notes>Kitchen 1.23</a> and allow running local or remote commands on certain stages of Kitchen execution. We can use them to do our setup and tear down actions:</p><div class=highlight><pre style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:green;font-weight:700>driver</span>:<span style=color:#bbb>
+</span></code></pre></div><p>If you have a machine at the given IP, your usual <code>kitchen converge</code> and <code>kitchen verify</code> commands work as intended.</p>
+<h2 id=setup-and-tear-down>Setup and Tear Down</h2>
+<p>As we are working with a physical machine which does not just vanish or pop into existence, we have to take care of not getting the machine messed up. After all, <code>kitchen create</code> and <code>kitchen destroy</code> just change a value in your local <code>.kitchen</code> directory and do not interact with the actual machine at all.</p>
+<p>One decentralized solution are <a href=https://kitchen.ci/docs/reference/lifecycle-hooks/>Kitchen Lifecycle Hooks</a>. They have been added in <a href=https://github.com/test-kitchen/test-kitchen/blob/master/RELEASE_NOTES.md#test-kitchen-1230-release-notes>Kitchen 1.23</a> and allow running local or remote commands on certain stages of Kitchen execution. We can use them to do our setup and tear down actions:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:green;font-weight:700>driver</span>:<span style=color:#bbb>
 </span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>static<span style=color:#bbb>
 </span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>hostname</span>:<span style=color:#bbb> </span><span style=color:#666>198.51.100.14</span><span style=color:#bbb>
 </span><span style=color:#bbb>  
@@ -16,4 +100,78 @@
 </span><span style=color:#bbb>        </span><span style=color:green;font-weight:700>SOME_PARAMETER</span>:<span style=color:#bbb> </span>value<span style=color:#bbb>
 </span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>pre_destroy</span>:<span style=color:#bbb>
 </span><span style=color:#bbb>    </span>- <span style=color:green;font-weight:700>remote</span>:<span style=color:#bbb> </span>Start-Process -FilePath C:\Windows\System32\Sysprep\Sysprep.exe -ArgumentList &#34;/generalize /oobe /shutdown /quiet&#34;<span style=color:#bbb>
-</span></code></pre></div><p>The logical execution steps are:</p><ul><li><code>kitchen create</code>: Add the IP address to the suite state file in <code>.kitchen</code> only</li><li>right after create: Run a script <code>setup.ps1</code> which is present on the remote machine</li><li>&mldr; develop, test, retry &mldr;</li><li>right before destroy. Remotely trigger a <a href=https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/sysprep--generalize--a-windows-installation>SysPrep (reset to factory defaults for Windows</a></li><li><code>kitchen destroy</code>: Remove the IP address from the state file</li></ul><p>Of course, SysPrep takes time so you will now sit there and bite your nails for some minutes until you can retest.</p><h3 id=alternative-for-restoring-baseline-configuration>Alternative for Restoring Baseline Configuration</h3><p>While I have not benchmarked it, I think using System Restore Points instead of a full SysPrep might be quicker for Windows systems. These work using <code>Restore-Computer -RestorePoint X</code> in Powershell, where X is the ID of a Restore point you set up on initial deployment of the machine.</p><h3 id=linux-based-systems>Linux-based Systems</h3><p>For Ubuntu/Debian based systems there is no centralized, standard procedure to reset them to default as far as I know. You can try the tool <a href=https://github.com/gaining/Resetter>Resetter</a> here, which also has a command line interface.</p><h2 id=centralized-management-of-machines>Centralized Management of Machines</h2><p>As soon as you have a bigger team involved in writing components for physical machines or have automated testing pipelines, the 1:1 approach of this post does not scale any more.</p><p>The logical solution is to have a central pool of machines and a mechanism to centrally hand out test machines, do queueing and standardized restore procedures. This functionality was introduced in <a href=https://github.com/tecracer-theinen/kitchen-static/releases/tag/v0.10.0>version 0.10.0 of <code>kitchen-static</code></a> and will be the topic of another blog post.</p></div></div></article><article class=uk-article><div class=container><section class=author-box itemprop=author itemscope itemtype=https://schema.org/Person><div class="media author-box"><div class=media-figure><img alt="Author Image" src=/authors/theinen.png class="avatar avatar-100 photo" height=125 width=125></div><div class=media-body><h2><a href=/authors/thomas-heinen>Thomas Heinen</a></h2><p>Thomas is a Cloud Consultant and Trainer at tecRacer Consulting with a focus on Chef, AWS, DevOps and Security.</p><div class=author-icons><a target=_self class=author-website title="Thomas Heinen's Author Profile" href=/authors/thomas-heinen data-original-title="Author's Profile"><i class="fas fa-id-card"></i></a><a target=_new class=author-xing title="Thomas Heinen on Xing" href=https://xing.com/profile/Thomas_Heinen4 data-original-title=Xing><i class="fab fa-xing"></i></a><a target=_new class=author-linkedin title="Thomas Heinen on LinkedIn" href=https://linkedin.com/in/thomas-heinen data-original-title=LinkdIn><i class="fab fa-linkedin"></i></a><a target=_new class=author-github title="Thomas Heinen on GitHub" href=https://github.com/tecracer-theinen data-original-title=Github><i class="fab fa-github"></i></a></div></div></div></section></div></article></main></div><div id=tm-footer class=tm-footer><div id=tm-footer class="tm-footer tm-footer-margin-top"><div class="uk-panel uk-panel-space uk-text-center"><p>Copyright © 2018-today by <a href=https://chef.tecracer.de/ target=_blank>tecRacer</a></p></div></div></div><div id=offcanvas class=uk-offcanvas aria-hidden=true><div class="uk-offcanvas-bar uk-offcanvas-bar-flip"><div class="uk-panel uk-text-center"><a href=https://tecracer-chef.github.io/></a><img src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt></a></div><ul class="uk-nav uk-nav-offcanvas"><li><a href=/>Blog</a></li><li><a href=/authors>Authors</a></li><li><a href=/github/github-prs.html>Pull Requests</a></li></ul></div></div></div></body></html>
+</span></code></pre></div><p>The logical execution steps are:</p>
+<ul>
+<li><code>kitchen create</code>: Add the IP address to the suite state file in <code>.kitchen</code> only</li>
+<li>right after create: Run a script <code>setup.ps1</code> which is present on the remote machine</li>
+<li>&mldr; develop, test, retry &mldr;</li>
+<li>right before destroy. Remotely trigger a <a href=https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/sysprep--generalize--a-windows-installation>SysPrep (reset to factory defaults for Windows</a></li>
+<li><code>kitchen destroy</code>: Remove the IP address from the state file</li>
+</ul>
+<p>Of course, SysPrep takes time so you will now sit there and bite your nails for some minutes until you can retest.</p>
+<h3 id=alternative-for-restoring-baseline-configuration>Alternative for Restoring Baseline Configuration</h3>
+<p>While I have not benchmarked it, I think using System Restore Points instead of a full SysPrep might be quicker for Windows systems. These work using <code>Restore-Computer -RestorePoint X</code> in Powershell, where X is the ID of a Restore point you set up on initial deployment of the machine.</p>
+<h3 id=linux-based-systems>Linux-based Systems</h3>
+<p>For Ubuntu/Debian based systems there is no centralized, standard procedure to reset them to default as far as I know. You can try the tool <a href=https://github.com/gaining/Resetter>Resetter</a> here, which also has a command line interface.</p>
+<h2 id=centralized-management-of-machines>Centralized Management of Machines</h2>
+<p>As soon as you have a bigger team involved in writing components for physical machines or have automated testing pipelines, the 1:1 approach of this post does not scale any more.</p>
+<p>The logical solution is to have a central pool of machines and a mechanism to centrally hand out test machines, do queueing and standardized restore procedures. This functionality was introduced in <a href=https://github.com/tecracer-theinen/kitchen-static/releases/tag/v0.10.0>version 0.10.0 of <code>kitchen-static</code></a> and will be the topic of another blog post.</p>
+</div>
+</div>
+</article>
+<article class=uk-article>
+<div class=container>
+<section class=author-box itemprop=author itemscope itemtype=https://schema.org/Person>
+<div class="media author-box">
+<div class=media-figure>
+<img alt="Author Image" src=/authors/theinen.png class="avatar avatar-100 photo" height=125 width=125>
+</div>
+<div class=media-body>
+<h2><a href=/authors/thomas-heinen>Thomas Heinen</a></h2>
+<p>
+Thomas is a Cloud Consultant and Trainer at tecRacer Consulting with a focus on Chef, AWS, DevOps and Security.
+</p>
+<div class=author-icons>
+<a target=_self class=author-website title="Thomas Heinen's Author Profile" href=/authors/thomas-heinen data-original-title="Author's Profile">
+<i class="fas fa-id-card"></i>
+</a>
+<a target=_new class=author-xing title="Thomas Heinen on Xing" href=https://xing.com/profile/Thomas_Heinen4 data-original-title=Xing>
+<i class="fab fa-xing"></i>
+</a>
+<a target=_new class=author-linkedin title="Thomas Heinen on LinkedIn" href=https://linkedin.com/in/thomas-heinen data-original-title=LinkdIn>
+<i class="fab fa-linkedin"></i>
+</a>
+<a target=_new class=author-github title="Thomas Heinen on GitHub" href=https://github.com/tecracer-theinen data-original-title=Github>
+<i class="fab fa-github"></i>
+</a>
+</div>
+</div>
+</div>
+</section>
+</div>
+</article>
+</main>
+</div>
+<div id=tm-footer class=tm-footer>
+<div id=tm-footer class="tm-footer tm-footer-margin-top">
+<div class="uk-panel uk-panel-space uk-text-center">
+<p>Copyright © 2018-today by <a href=https://chef.tecracer.de/ target=_blank>tecRacer</a></p>
+</div>
+</div>
+</div><div id=offcanvas class=uk-offcanvas aria-hidden=true>
+<div class="uk-offcanvas-bar uk-offcanvas-bar-flip">
+<div class="uk-panel uk-text-center">
+<a href=https://tecracer-chef.github.io/></a>
+<img src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+</div>
+<ul class="uk-nav uk-nav-offcanvas">
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,437 @@
+<!doctype html><html lang=en>
+<head>
+<meta charset=utf-8>
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<title>Mit allen verbunden Teil 2 | tecRacer Chef</title>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<link rel=canonical href=https://tecracer-chef.github.io/2019/01/mit-allen-verbunden-teil-2/>
+<meta http-equiv=content-language content="en-us">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="tecRacer Chef">
+<meta property="og:title" content="Mit allen verbunden Teil 2">
+<meta property="og:url" content="https://tecracer-chef.github.io/2019/01/mit-allen-verbunden-teil-2/">
+<meta property="og:image" content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:title content="tecRacer Chef">
+<meta name=twitter:url content="https://tecracer-chef.github.io/2019/01/mit-allen-verbunden-teil-2/">
+<meta name=twitter:image content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:card content>
+<link rel=alternate href=/blog/feed title="Patrick Schaumburg" type=application/rss+xml>
+<link href=https://tecracer-chef.github.io/css/theme.css rel=stylesheet>
+<script src=https://tecracer-chef.github.io/js/jquery.min.js></script>
+<script src=https://tecracer-chef.github.io/js/uikit.min.js></script>
+<script src=https://tecracer-chef.github.io/js/fa-all.js></script>
+</head>
+<body>
+<div class="uk-container uk-container-center">
+<div class=tm-header>
+<div class="tm-toolbar uk-clearfix uk-hidden-small">
+<div class=uk-float-right>
+<div class=uk-panel>
+<ul class=uk-subnav>
+<li><a href=https://github.com/tecracer-chef class="uk-icon-hover uk-icon-small uk-icon-github" target=_blank></a></li>
+<li><a href=https://twitter.com/tecracer class="uk-icon-hover uk-icon-small uk-icon-twitter" target=_blank></a></li>
+<li><a href=https://www.xing.com/companies/tecracergmbh%26co.kg class="uk-icon-hover uk-icon-small uk-icon-xing" target=_blank></a></li>
+<li><a href=https://www.linkedin.com/company/tecracer-group/ class="uk-icon-hover uk-icon-small uk-icon-linkedin" target=_blank></a></li>
+<li><a href=https://www.facebook.com/tecRacer class="uk-icon-hover uk-icon-small uk-icon-facebook" target=_blank></a></li>
+</ul>
+</div>
+</div>
+</div>
+<nav class=uk-navbar>
+<a class=uk-navbar-brand href=/>
+<img class="tm-logo uk-responsive-height uk-hidden-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+<img class="tm-logo-small uk-responsive-height uk-visible-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+<div class=uk-hidden-small>
+<ul class=uk-navbar-nav>
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+<div class="uk-navbar-flip uk-visible-small">
+<a href=#offcanvas class=uk-navbar-toggle data-uk-offcanvas></a>
+</div>
+</nav>
+</div>
+<div id=content>
+<main id=tm-content class=tm-content>
+<article class=uk-article>
+<div class="tm-article-featured-image uk-cover-background" style=background-image:url(/img/2018/12/john-carlisle-539580-unsplash.jpg)></div>
+<div class="tm-article-content uk-position-relative">
+<div class="tm-article-date uk-text-center">
+<span class=tm-article-date-day>
+06
+</span>
+<span class=tm-article-date-month>
+Jan
+</span>
+</div>
+<h1 class=uk-article-title>Mit allen verbunden Teil 2</h1>
+<p class=uk-article-meta>
+Written by
+Gernot Glawe
+</p>
+<div class=uk-margin>
+<p><strong>Infrastrukturtest des Transit Gateway mit kitchen und Inspec</strong></p>
+<p>Transit Gateway (<a href=https://aws.amazon.com/transit-gateway/>What is a Transit Gateway? – Amazon Virtual Private Cloud</a>) ist ein neuer AWS Service, der VPC Peering komplett ablösen kann. Zusätzlich kann damit auch ein „transitives" Peering gebaut werden. Das heißt, anders als bei einer VPC Peering Verbindung, die immer nur zwei VPCs miteinander verbindet, werden hier alle Netze miteinander verbunden. Das lohnt es sich genau zu testen! Diesen Test will ich hier möglichst vollautomatisiert aufbauen.</p>
+<p>Dafür brauche ich zwei BlogPosts.</p>
+<p><a href=/2018/12/20/verbunden1.html>Teil 1</a> war “Test von CloudFormation mit taskCat”.</p>
+<p>Dies ist Teil 2: Test der Transit-Gateway Infrastruktur mit Inspec.</p>
+<h2 id=der-versuchsaufbau>Der Versuchsaufbau</h2>
+<p><img src=/img/2019/01/Versuchsaufbau-1024x768.png alt=Versuchsaufbau)></p>
+<p>Zuerst baut kitchen aus dem Chef Framework für uns die Testinstanz auf. Dann definieren wir den Test selber mit <em>inspec</em>. Nach einer kurzen Betrachtung der testgetriebenen Entwicklung bauen wir letztendlich das Transit Gateway und testen die Infrastruktur.</p>
+<h2 id=automatischer-aufbau-von-testinstanzen-mit-kitchen>Automatischer Aufbau von Testinstanzen mit <strong>kitchen</strong></h2>
+<p>Kitchen ist der Test Controller vom Chef Framework. Die sprachliche Analogie vom (Küchen) Chef findet sich an vielen Stellen wieder, so auch hier. Andere Tools heißen z.B. “<em>Knife</em>” oder “<em>foodcritic</em>”.</p>
+<p>Mehr zu Chef unter <a href=https://www.chef.io>Chef.io</a>.</p>
+<p>Um zu Testen baut kitchen Instanzen auf (create), und bereitet diese auf den Test vor. Danach kann ich mit “verify” Test ausführen. Diese Test sind in einer eigenen DSL geschrieben, <em>inspec</em> genannt.</p>
+<p><img src=/img/2019/01/Testinstanz-1024x768.png alt></p>
+<p>Doch zuerst zur Kücheneinrichtung:</p>
+<h3 id=konfiguration-von-kitchen>Konfiguration von kitchen</h3>
+<p>In der Konfigurationsdatei “.kitchen.yml” konfiguriere ich, wie kitchen mit AWS zusammenspielt. Zuerst teile ich kitchen mit, was für eine Art von Instanz erstellt werden soll. Ich kann z.B. auch Vagrant oder docker statt des AWS Treibers verwenden, wenn ein lokaler Test ausreicht. Für den Test der AWS Infrastruktur verwende ich den <code>kitchen-ec2</code> Treiber.</p>
+<h4 id=driver>Driver</h4>
+<pre><code>---
+driver:
+  name: ec2
+  region: eu-central-1
+</code></pre>
+<p>Der <em>driver</em> ist also <code>ec2</code>. Zusätzlich definiere ich die Region, hier Frankfurt. Der EC2 Driver hat ein eigenes <a href=https://github.com/test-kitchen/kitchen-ec2>Github Projekt</a>. Zu Anfang definiere ich den Standard Driver. In der <code>platform</code> Sektion kann ich einen anderen Treiber definieren. Hier verwende ich die Platform Daten, um weitere Konfigurationen vorzunehmen.</p>
+<h4 id=provisioner>Provisioner</h4>
+<pre><code>provisioner:
+  name: chef_zero
+  always_update_cookbooks: true
+</code></pre>
+<p>Der <code>provisioner</code> wird nur benötigt, wenn ich Chef Rezepte teste. Daher wird er hier nicht verwendet. Da Chef normalerweise eine Client Server Infrastruktur verwendet, würde bei einem Test von Chef Konfigurationen bzw. Kochbüchern <code>cookbooks</code> mit dem Provisioner <code>chef_zero</code> der Server lokal simuliert werden.</p>
+<h4 id=verifier>Verifier</h4>
+<p>Der verifier führt die eigentlichen Tests aus.</p>
+<pre><code>verifier:
+  name: inspec
+</code></pre>
+<p>Für die <code>verify</code> Phase wird inspec definiert.</p>
+<h4 id=transport>Transport</h4>
+<pre><code>transport:
+ username: [&quot;ec2-user&quot;]
+</code></pre>
+<p>Der Datentransport kann in Kitchen mit <em>ssh</em> oder <em>winrm</em> passieren. Hier definieren wir den richtigen Usernamen für das AMI.</p>
+<h4 id=platform-definition>Platform Definition</h4>
+<pre><code>platforms:
+  - name: amazon
+    driver: 
+      region: eu-central-1
+      image_id: ami-0cfbf4f6db41068ac
+      instance_type: t2.large
+      subnet_id: subnet-01cb511f85c1b2356
+      tags:
+        Name: &quot;Kitchen Test Instance ec2&quot;
+</code></pre>
+<p>Hier setze manuell ich die Subnet ID aus dem erzeugten VPC/Subnet A ein.</p>
+<h4 id=testsuites>Testsuites</h4>
+<p>Hier können verschiedene Test in “Suites” zusammengefasst werden. Für dieses einfache Beispiel verwende ich nur die Standard suite.</p>
+<pre><code>suites:
+  - name: default
+</code></pre>
+<h3 id=ablauf-des-test>Ablauf des Test</h3>
+<p>Wenn ihr also den Test nachbauen wollt, muss Folgendes in <code>.kitchen.yaml</code> angepasst werden:</p>
+<ul>
+<li>Die Region</li>
+<li>Die Subnet ID</li>
+</ul>
+<h2 id=definition-von-test-mit-der-inspec-dsl>Definition von Test mit der Inspec DSL</h2>
+<p>Für die Definition der Tests gibt es eine spezielle DSL Sprache, die viele Testarten vordefiniert hat. Hier verwende ich diese Sprache <code>inspec</code> (<a href=https://www.inspec.io/>Inspec Webseite</a>). Genau genommen ist es in ruby geschrieben, baut aber eine eigene Sprache oben drauf.</p>
+<p>Der Vorteil dabei ist, dass viele Resourcentypen bereits vordefiniert sind. Inspec definiert dabei auch viele AWS Resourcen, wie vpc, subnet, s3 usw. Zusammen mit kitchen werden die notwendigen Test Instanzen automatisch aufgebaut.</p>
+<p>Da ich hier nur die Erreichbarkeit der Instanzen teste, kann ich die Resource <code>http</code> verwenden. Ein einfaches Beispiel ist:</p>
+<pre><code>describe http('http://localhost') do
+  its('status') { should cmp 200 }
+End
+</code></pre>
+<p>Der code erschließt sich so sehr einfach. Abgefragt wird die URL <code>http://localhost</code> und die Antwort wird auf den Status geprüft. Natürlich kann ich viele andere Attribute prüfen. (<a href=https://www.inspec.io/docs/reference/resources/http/>Siehe Dokumentation inspec Resourcen</a>) Für Netz A definiere ich diesen Test in <code>test/integration/default/default_test.rb</code>:</p>
+<pre><code>describe http('http://10.0.1.16') do
+  its('status') { should cmp 200 }
+  its('body') { should eq 'Node A' }
+end
+</code></pre>
+<p>Der Webserver auf der Instanz in VPC a wird auf Erreichbarkeit geprüft und der Inhalt wird auf den Text “Node A” geprüft. Dies korrespondiert mit der UserData der Instanz:</p>
+<pre><code>UserData:
+  Fn::Base64: |
+    #!/bin/bash -xe
+    yum update -y
+    yum install -y httpd24
+    service httpd start
+    chkconfig httpd on
+    echo &quot;Node A&quot; &gt;/var/www/html/index.html
+</code></pre>
+<p><img src=/img/2019/01/test1.png alt="Test 1)"> Der Webserver auf Instanz 10.0.1.16 in VPC A wird auf Port 80 innerhalb des VPC A getestet.</p>
+<h2 id=ablauf-beim-testen>Ablauf beim Testen</h2>
+<p>Die grundsätzliche Philosophie des testgetriebenen Vorgehens ist, dass man sich <em>vor</em> der Erstellung der Funktionalität überlegt, was denn das Ergebnis der Funktion (/des Programms/der Infrastruktur) sein sollte.</p>
+<h3 id=rot>Rot</h3>
+<p>Dann erstelle ich einen Test, der dann bei der ersten Ausführung fehlschlagen muss, also “Rot” ergibt. Das ist genau das erwartete Ergebnis, da die Funktionalität ja noch nicht vorhanden ist.</p>
+<h3 id=grün>Grün</h3>
+<p>Jetzt baue ich die Funktionalität und teste immer wieder, bis die Funktion meinen Erwartungen entspricht, also “Grün” ist.</p>
+<h3 id=umbau>Umbau</h3>
+<p>Jetzt habe ich eine Funktion und einen automatisierten Test, dass diese Funktion ihren Zweck erfüllt. Jetzt kann ich unter der Haube umbauen und mit dem Test sicherstellen (verify Phase), dass die Funktionalität immer noch gegeben ist.</p>
+<h2 id=lets-test>Lets Test</h2>
+<p>Alle Vorarbeiten und Vorüberlegungen sind abgeschlossen, wir können loslegen. Die meisten Schritte sind in einem <code>Makefile</code> automatisiert.</p>
+<p>Eine Übersicht der Schritte bekommt man mit <code>make help</code>. Der Ablauf des Test in der Übersicht:</p>
+<ol>
+<li>
+<p>VPCs erstellen: <code>make deploy</code></p>
+</li>
+<li>
+<p>Region und Subnet ID von VPC A in <code>.kitchen.yml</code> updaten</p>
+</li>
+<li>
+<p>Testumgebung aufbauen: <code>make start-kitchen</code></p>
+</li>
+<li>
+<p>Test ausführen: <code>make test-kitchen</code></p>
+</li>
+</ol>
+<p>Ohne VPC Peering und Transit Gateway bekommen ich dann z.B. folgende Ausgabe vom Test:</p>
+<pre><code> http GET on http://10.0.1.16
+     ✔  status should cmp == 200
+     ✔  body should eq &quot;Node A&quot;
+  http GET on http://10.0.2.16
+     ×  status should cmp == 200
+
+     expected: 200
+          got: nil
+
+     (compared using `cmp` matcher)
+
+     ×  body should eq &quot;Node B&quot;
+
+     expected: &quot;Node B&quot;
+          got: nil
+
+     (compared using ==)
+
+  http GET on http://10.0.3.16
+     ×  status should cmp == 200
+
+     expected: 200
+          got: nil
+
+     (compared using `cmp` matcher)
+
+     ×  body should eq &quot;Node C&quot;
+
+     expected: &quot;Node C&quot;
+          got: nil
+
+     (compared using ==)
+
+
+Test Summary: 2 successful, 4 failures, 0 skipped
+</code></pre>
+<p>Im lokalen Netz A, in dem auch die Testinstanz läuft ist der Zugriff auf <code>10.0.1.16</code> möglich, auf die anderen Netze noch nicht.</p>
+<p><img src=/img/2019/01/TestAok.png alt="Test A OK"></p>
+<p>Nun endlich kann ich das Transit Gateway als Verbindung konfigurieren.</p>
+<h3 id=transit-gateway>Transit Gateway</h3>
+<p>Dazu brauche ich folgende Komponenten:</p>
+<ul>
+<li>das Transit Gateway selber</li>
+<li>Pro VPC ein Transit Gateway Attachment</li>
+<li>Routen in den VPC zu den anderen VPCs</li>
+</ul>
+<p>Das Transit Gateway (TGW)ist der Knotenpunkt, der Router der alles verbindet. Um eine Verbindung vom VPC zu dem TGW zu bekommen, muss ein VPC mit dem TGW verbunden werden. Diese Verbindung ist das Transit Gateway Attachment. Als letztes Element muss man im VPC die Subnets, die mit den anderen VPS verbunden werden sollen mit Routen versorgen. Die Routen Tabellen hängen am Subnet, nicht am VPC.</p>
+<h2 id=ein-gesamtdurchlauf>Ein Gesamtdurchlauf</h2>
+<p>Zusammen mit den VPCs aus Teil 1 können wir jetzt einen Gesamtdurchlauf machen:</p>
+<h3 id=tools-installieren>Tools installieren</h3>
+<ul>
+<li>ChefDK</li>
+<li>Clouds-aws</li>
+<li>Aws cli</li>
+</ul>
+<h3 id=vpcs-aufbauen>VPCs aufbauen</h3>
+<p>Eingabe: <code>make deploy</code> Dauer: ca. 1min</p>
+<pre><code>clouds  -r eu-central-1 update -c --events  demo-vpc-b &amp;
+clouds  -r eu-central-1 update -c --events   demo-vpc-c &amp;
+clouds  -r eu-central-1 update -c --events   demo-vpc-a
+2018-12-30/15:17:08 CREATE_IN_PROGRESS	AWS::CloudFormation::Stack	demo-vpc-a	User Initiated
+2018-12-30/15:17:08 CREATE_IN_PROGRESS	AWS::CloudFormation::Stack	demo-vpc-b	User Initiated
+2018-12-30/15:17:08 CREATE_IN_PROGRESS	AWS::CloudFormation::Stack	demo-vpc-c	User Initiated
+2018-12-30/15:17:11 CREATE_IN_PROGRESS	AWS::EC2::VPC            	VPC
+2018-12-30/15:17:11 CREATE_IN_PROGRESS	AWS::EC2::InternetGateway	InternetGateway
+2018-12-30/15:17:11 CREATE_IN_PROGRESS	AWS::EC2::VPC
+...
+</code></pre>
+<p>In der AWS Console sehe ich nun die drei VPCs:</p>
+<p><img src=/img/2019/01/PastedGraphic-1024x191.png alt="3 VPCs"></p>
+<p>Vom Subnet des VPCs A merke ich mir die ID:</p>
+<p><img src=/img/2019/01/PastedGraphic1-1024x34.png alt="Subnet A"></p>
+<p>Die ID trage ich in die <code>.kitchen.yml</code> ein:</p>
+<p><img src=/img/2019/01/PastedGraphic2-1024x137.png alt=kitchen></p>
+<h3 id=kitchen-testinstanz-aufbauen>Kitchen Testinstanz aufbauen</h3>
+<p>Vorbereiten der Verwendung ChefDK auf Bash:</p>
+<pre><code>eval &quot;$(chef shell-init bash)&quot;
+</code></pre>
+<p>Eingabe: <code>make start-kitchen</code> Dauer: ca. 1. Min.</p>
+<pre><code>kitchen create
+-----&gt; Starting Kitchen (v1.23.3)
+WARN: Unresolved specs during Gem::Specification.reset:
+      concurrent-ruby (~&gt; 1.0)
+WARN: Clearing out unresolved specs.
+Please report a bug if this causes problems.
+-----&gt; Creating &lt;default-amazon&gt;...
+       Detected platform: amazon version 2018.03. on x86_64. Instance Type: t2.large. Default username: ec2-user (default).
+       If you are not using an account that qualifies under the AWS
+free-tier, you may be charged to run these suites. The charge
+should be minimal, but neither Test Kitchen nor its maintainers
+are responsible for your incurred costs.
+
+       Created automatic security group sg-0bcd26ac38ceea95c
+       Created automatic key pair kitchen-defaultamazon-silberkopf-GernotsMBPfritzbox-2018-12-30T15:23:20Z-u9w48qe6
+       Instance &lt;i-09467b6ad93ddda02&gt; requested.
+       Polling AWS for existence, attempt 0...
+       Attempting to tag the instance, 0 retries
+       EC2 instance &lt;i-09467b6ad93ddda02&gt; created.
+       Waited 0/300s for instance &lt;i-09467b6ad93ddda02&gt; volumes to be ready.
+       Waited 0/300s for instance &lt;i-09467b6ad93ddda02&gt; to become ready.
+       Waited 5/300s for instance &lt;i-09467b6ad93ddda02&gt; to become ready.
+       Waited 10/300s for instance &lt;i-09467b6ad93ddda02&gt; to become ready.
+       Waited 15/300s for instance &lt;i-09467b6ad93ddda02&gt; to become ready.
+       Waited 20/300s for instance &lt;i-09467b6ad93ddda02&gt; to become ready.
+       EC2 instance &lt;i-09467b6ad93ddda02&gt; ready (hostname: 35.159.15.219).
+       Waiting for SSH service on 35.159.15.219:22, retrying in 3 seconds
+       Waiting for SSH service on 35.159.15.219:22, retrying in 3 seconds
+       Waiting for SSH service on 35.159.15.219:22, retrying in 3 seconds
+       Waiting for SSH service on 35.159.15.219:22, retrying in 3 seconds
+       [SSH] Established
+       Finished creating &lt;default-amazon&gt; (0m41.87s).
+-----&gt; Kitchen is finished. (0m48.18s)
+</code></pre>
+<h3 id=erster-test>Erster Test</h3>
+<p>Eingabe: <code>make test-kitchen</code></p>
+<pre><code>kitchen verify
+-----&gt; Starting Kitchen (v1.23.3)
+WARN: Unresolved specs during Gem::Specification.reset:
+      concurrent-ruby (~&gt; 1.0)
+WARN: Clearing out unresolved specs.
+Please report a bug if this causes problems.
+-----&gt; Converging &lt;default-amazon&gt;...
+...
+  http GET on http://10.0.1.16
+     ✔  status should cmp == 200
+     ✔  body should eq &quot;Node A&quot;
+  http GET on http://10.0.2.16
+     ×  status should cmp == 200
+...
+Test Summary: 2 successful, 2 failures, 0 skipped
+</code></pre>
+<p>Da die kitchen Test instanz im VPC A erstellt wurde, kann sie auf den Webserver in VPC A zugreifen, nicht aber in B und C.</p>
+<h3 id=transit-gateway-erstellen>Transit Gateway erstellen</h3>
+<p>In der AWS Console:</p>
+<ul>
+<li>VPC-Transit Gateways (ganz unten links)
+<ul>
+<li>Create Transit Gateway</li>
+</ul>
+</li>
+</ul>
+<p>Name Tag: “demo TGW” Description: “demo TGW” Alle anderen Einstellungen können im Standard bleiben. Jetzt dauert es ein paar Minuten, bis das TGW erstellt wurde.</p>
+<p><img src=/img/2019/01/PastedGraphic3-1024x119.png alt="demo TGW"></p>
+<p>Wie auch bei der EC2 Konsole, wenn man eine Instanz erstellt, kann Klick auf den Refresh Knopf ab und zu nicht schaden.</p>
+<p><img src=/img/2019/01/PastedGraphic4-1024x109.png alt=Refresh></p>
+<h3 id=transit-gateway-attachment-a-erstellen>Transit Gateway Attachment A erstellen</h3>
+<p>In der AWS Console:</p>
+<ul>
+<li>VPC-Transit Gateways (ganz unten links)
+<ul>
+<li>Create Transit Gateway Attachment</li>
+</ul>
+</li>
+</ul>
+<p>Transit Gateway ID: Eben erstelltes TGW wählen Attachment type: VPC Attachment name tag: Demo A VPC ID: VPC Demo A wählen.</p>
+<p><img src=/img/2019/01/PastedGraphic5-1024x592.png alt></p>
+<ul>
+<li>Create Attachment klicken.</li>
+</ul>
+<p>Sobald das TGW Attachment in den Status “available” wechselt, erscheinen automatisch in der TGW Route Table unter “Associations”, “Propagations” und “Routes” Einträge.</p>
+<h3 id=transit-gateway-attachment-b-erstellen>Transit Gateway Attachment B erstellen</h3>
+<p>Das Gleiche wird jetzt für VPC B wiederholt: In der AWS Console:</p>
+<ul>
+<li>Service VPC wählen</li>
+<li>VPC-Transit Gateways (ganz unten links)
+<ul>
+<li>Create Transit Gateway Attachment</li>
+</ul>
+</li>
+</ul>
+<p>Transit Gateway ID: Eben erstelltes TGW wählen Attachment type: VPC Attachment name tag: Demo B VPC ID: VPC Demo B wählen.</p>
+<h3 id=test-erneut-ausführen>Test erneut ausführen</h3>
+<p>Da VPC A und B jetzt am TGW hängen, erwartet man ja irgendwie, dass die beiden sich jetzt unterhalten können… Die Ausführung des Kitchen Test <code>make test-kitchen</code> belehrt uns eines Besseren: A und B sehen sich noch nicht!</p>
+<pre><code>Test Summary: 2 successful, 2 failures, 0 skipped
+</code></pre>
+<p>Was fehlt? Es fehlt der Rückweg! Oder der Hinweg, je nachdem wie man es betrachtet. Wir müssen noch in den Routentabellen von den Subnetzen in VPC A und B Routen für das TGW erstellen.</p>
+<h3 id=route-für-vpc-a-erstellen>Route für VPC A erstellen</h3>
+<p>In der AWS Console:</p>
+<ul>
+<li>VPC-Route Tables (oben links)
+<ul>
+<li><strong>Demo_A Public Routes</strong> wählen
+<ul>
+<li>Routes/Edit Routes</li>
+<li>Route hinzufügen: Destination: 10.0.0.0/16 Target: Eben erstelltes Transit Gateway</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>Die Tabelle sieht danach in etwa so aus:</p>
+<p><img src=/img/2019/01/PastedGraphic6-1024x282.png alt=Tabelle></p>
+<p>Auch jetzt ergibt der Test noch “Rot”. Erst wenn wir auch die Route vom VPC B zum TGW hinzufügen, klappt es:</p>
+<pre><code> http GET on http://10.0.1.16
+     ✔  status should cmp == 200
+     ✔  body should eq &quot;Node A&quot;
+  http GET on http://10.0.2.16
+     ✔  status should cmp == 200
+  http GET on http://10.0.3.16
+     ×  status should cmp == 200
+
+     expected: 200
+          got:
+
+     (compared using `cmp` matcher)
+
+
+Test Summary: 3 successful, 1 failure, 0 skipped
+</code></pre>
+<p>Und damit steht die Verbindung zwischen den VPCs! Durch das Testgetriebene Vorgehen konnten wir an jeder Stelle mit <code>make test-kitchen</code> testen, ob die IP Verbindung steht und die Routen sowie die Security Groups usw. korrekt eingerichtet sind. Ohne Testen ist es so etwas wie ein Blindflug.</p>
+<p>Deswegen gilt auch für Infrastrukturprojekte: Test first! U</p>
+<p>nd um das Nachbauen einfacher zu machen, haben wir den Code auf github veröffentlicht:</p>
+<p><a href=https://github.com/tecracer/demo-transit-gateway>tecracer/demo-transit-gateway</a></p>
+<p>Benötigen Sie Unterstützung bei Ihrem AWS oder Chef Projekt? Kontaktieren sie uns gerne <a href=https://www.tecracer.de/kontakt/>hier.</a></p>
+</div>
+</div>
+</article>
+<article class=uk-article>
+<div class=container>
+<section class=author-box itemprop=author itemscope itemtype=https://schema.org/Person>
+</section>
+</div>
+</article>
+</main>
+</div>
+<div id=tm-footer class=tm-footer>
+<div id=tm-footer class="tm-footer tm-footer-margin-top">
+<div class="uk-panel uk-panel-space uk-text-center">
+<p>Copyright © 2018-today by <a href=https://chef.tecracer.de/ target=_blank>tecRacer</a></p>
+</div>
+</div>
+</div><div id=offcanvas class=uk-offcanvas aria-hidden=true>
+<div class="uk-offcanvas-bar uk-offcanvas-bar-flip">
+<div class="uk-panel uk-text-center">
+<a href=https://tecracer-chef.github.io/></a>
+<img src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+</div>
+<ul class="uk-nav uk-nav-offcanvas">
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+</div>
+</div>
+</body>
+</html>

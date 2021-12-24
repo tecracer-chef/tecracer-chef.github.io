@@ -1,4 +1,187 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><title>The State of Target Mode in 2020 | tecRacer Chef</title><meta name=viewport content="width=device-width,initial-scale=1"><link rel=canonical href=https://tecracer-chef.github.io/2020/06/the-state-of-target-mode-in-2020/><meta http-equiv=content-language content="en-us"><meta property="og:type" content="website"><meta property="og:site_name" content="tecRacer Chef"><meta property="og:title" content="The State of Target Mode in 2020"><meta property="og:url" content="https://tecracer-chef.github.io/2020/06/the-state-of-target-mode-in-2020/"><meta property="og:image" content="https://tecracer-chef.github.io/images/"><meta name=twitter:title content="tecRacer Chef"><meta name=twitter:url content="https://tecracer-chef.github.io/2020/06/the-state-of-target-mode-in-2020/"><meta name=twitter:image content="https://tecracer-chef.github.io/images/"><meta name=twitter:card content><link rel=alternate href=/blog/feed title="Patrick Schaumburg" type=application/rss+xml><link href=https://tecracer-chef.github.io/css/theme.css rel=stylesheet><script src=https://tecracer-chef.github.io/js/jquery.min.js></script><script src=https://tecracer-chef.github.io/js/uikit.min.js></script><script src=https://tecracer-chef.github.io/js/fa-all.js></script></head><body><div class="uk-container uk-container-center"><div class=tm-header><div class="tm-toolbar uk-clearfix uk-hidden-small"><div class=uk-float-right><div class=uk-panel><ul class=uk-subnav><li><a href=https://github.com/tecracer-chef class="uk-icon-hover uk-icon-small uk-icon-github" target=_blank></a></li><li><a href=https://twitter.com/tecracer class="uk-icon-hover uk-icon-small uk-icon-twitter" target=_blank></a></li><li><a href=https://www.xing.com/companies/tecracergmbh%26co.kg class="uk-icon-hover uk-icon-small uk-icon-xing" target=_blank></a></li><li><a href=https://www.linkedin.com/company/tecracer-group/ class="uk-icon-hover uk-icon-small uk-icon-linkedin" target=_blank></a></li><li><a href=https://www.facebook.com/tecRacer class="uk-icon-hover uk-icon-small uk-icon-facebook" target=_blank></a></li></ul></div></div></div><nav class=uk-navbar><a class=uk-navbar-brand href=/><img class="tm-logo uk-responsive-height uk-hidden-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
-<img class="tm-logo-small uk-responsive-height uk-visible-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt></a><div class=uk-hidden-small><ul class=uk-navbar-nav><li><a href=/>Blog</a></li><li><a href=/authors>Authors</a></li><li><a href=/github/github-prs.html>Pull Requests</a></li></ul></div><div class="uk-navbar-flip uk-visible-small"><a href=#offcanvas class=uk-navbar-toggle data-uk-offcanvas></a></div></nav></div><div id=content><main id=tm-content class=tm-content><article class=uk-article><div class="tm-article-featured-image uk-cover-background" style=background-image:url(/img/2020/06/laimannung-6Ptwy-nDnoE-unsplash.jpg)></div><div class="tm-article-content uk-position-relative"><div class="tm-article-date uk-text-center"><span class=tm-article-date-day>16</span>
-<span class=tm-article-date-month>Jun</span></div><h1 class=uk-article-title>The State of Target Mode in 2020</h1><p class=uk-article-meta>Written by
-<a target=_self title="Thomas Heinen's Author Profile SINGLE.HTML" href=/authors/thomas-heinen data-original-title="Author's Profile">Thomas Heinen</a></p><div class=uk-margin><h1 id=the-state-of-target-mode-in-2020>The State of Target Mode in 2020</h1><p>After my blog series on the agentless use of Chef dubbed &ldquo;Target Mode&rdquo; between August and October 2019, it is time to review what happened since.</p><p><strong>Updated 14th October 2020</strong></p><h2 id=update-14th-october-2020>Update (14th October 2020)</h2><p>With the <a href=https://discourse.chef.io/t/chef-infra-client-16-6-14-released/17807>release of Chef 16.6</a>, improvements to enable Remote Ohai have been included into the Chef core. After talking with the Chef engineers, discussing <a href=https://github.com/chef/ohai/pull/1480>my PoC</a> and some adjustments for stability, the Chef Target Mode should now be usable by everyone.</p><p>That being said, while Ohai can collect remote system data, the support for remote capable resources has not changed. If you are fine with writing your own custom resources using the Train interface, you now have a completely new approach to managing remote systems though.</p><h2 id=target-mode-in-a-nutshell>Target Mode in a Nutshell</h2><p>Target Mode (abbreviated TM) made its first appearance in Chef 15.1 as an experimental and undocumented feature. The idea behind it is that not every machine will have (or even support) a Chef agent, but might still be desired to be in a certain state. To enable this, the Chef developers rely on the Train library, which is the transport backend for Chef&rsquo;s popular InSpec product.</p><p>This approach makes it possible to have a pluggable backend infrastructure from standard SSH/WinRM to user-supported ones like Telnet, AWS SystemsManager, or even exotic ones like USB/Serial interfaces and REST APIs.</p><p>Relying on a line-based protocol, any existing Chef resource that just executes commands could be made &ldquo;Target Mode Ready&rdquo; by simply swapping local execution to remote execution. When TM debuted, all resources within Chef who used this pattern were made available. But it&rsquo;s only a handful of them.</p><h2 id=the-current-state>The Current State</h2><p>After some time has passed, I got curious about what had changed since my initial adventures.</p><p>There has been no documentation upgrade, so how to even start with TM will remain a mystery to anyone who did not find third party blog posts. Just before this blog post, I checked if any of those initial code sections were touched since - only to find them unchanged in almost two years.</p><p>Is that a bad thing? Not necessarily. When I did some POC work on Target Mode in late 2019 I found it to be pretty straightforward and stable already. Following the path of just swapping the backend by some helper libraries and doing easy case distinctions, the code does not leave much room for error.</p><p>But one thing is problematic about this: if you look at the <a href=https://github.com/chef/chef/blame/b9044b607af4a09738db65119c40490fcd9f972d/lib/chef/client.rb#L584-L603>the code where remote system data gets collected</a> you find it very static. For a system that is supposed to do an inventory run to determine, what the current state is and how it relates to desired, that is a big gap.</p><p>To iterate once again: There is no built-in remote discovery except for four OS-related bits of info. And no way to add any more.</p><h2 id=the-dirty-way>The Dirty Way</h2><p>I will not go into details here, because it is no solution for anything but exploration. But with some Ruby metaprogramming you can hook into that method from the outside and inject your own discovery data into that <a href=https://github.com/chef/chef/blob/9d5f5c40362d1fd7b0323cf0880300d6165b3a94/lib/chef/client.rb#L160-L164>mock Ohai object</a>. This enables you to work with remote data exactly in the same way as with a local system. But in reality, you should not need to have that knowledge. Things should just be there. Or even an interface to get them yourself.</p><p>How would Chef be able to solve this?</p><h2 id=extending-train-capabilities>Extending Train Capabilities</h2><p>The Train library already includes some minimalistic discovery functionality, as you can see in the <code>get_ohai_data_remotely</code> snippet of the Chef Client. As Train already has a plugin system for backends, this would be pretty straightforward: Add a new plugin type with platform filters (only run Cisco related filters on Cisco devices and such), cycle over matching plugins on connecting and pull it into the Chef Client as remote data.</p><p>This approach is the one I took in my PoC, where I had to do some black magic to modify the Chef client to do this. If you discount for the black magic, this is a 10 line modification of Chef and 1 additional plugin definition in Train.</p><p>Pros:</p><ul><li>lightweight</li><li>authoring of plugins by users, for any platform</li><li>limited modification of existing core products</li></ul><p>Cons:</p><ul><li>every discovery needs to be written from scratch</li></ul><h2 id=changing-ohai>Changing Ohai</h2><p>While the Train extension is suitable for exotic platforms (read: non-Chef supported like industrial devices or networking gear), it misses out on a huge chance if the remote system is just standard Linux. As Chef already has a powerful on-system discovery tool with Ohai, this would be the second route: making Ohai work on remote systems.</p><p>Unknown to most, this approach was taken by Chef themselves under the nickname &ldquo;OhBye&rdquo;. It is hidden deep in the GitHub repositories, only to be pointed out if you ask Chef developers about remote discovery. Lifting the vail today, so you can <a href=https://github.com/chef/ohai/commit/8d0c61ad1d31cddb4efe0f7f2f55d4a42dcb8d75>look at OhBye yourself</a>.</p><p>This takes a similar approach to the Chef Target Mode: adding an additional parameter to Ohai, adding a new second parameter to Ohai plugins (for the backend to use: local or remote), and then issuing the commands on there.</p><p>The code for OhBye was committed in March 2019, around the same time as Target Mode appeared. If you compare it to the current Ohai implementation, you can see it was never merged though. Looking at the code, this is clearly just a Proof of Concept as there are still commented-out calls to <code>binding.pry</code> in it.</p><p>By hooking into Ohai the way it did, it would leverage all platform detection features of Ohai and instantly enable things like Solaris support for example. With some more flexibility, there&rsquo;s no reason against adding discovery for network devices and similar as it would just execute vendor-specific commands over some backend and parse the results.</p><p>Apart from being a dead-end at this point in time, the extensibility of this approach and instant functional gain is impressive. While the backend switching logic would have to be modified to dynamically use train plugins (which already return their URI scheme anyway), this is promising.</p><p>Pros:</p><ul><li>uses the whole existing discovery infrastructure on supported platforms</li><li>could be enabled to support additional platforms</li></ul><p>Cons:</p><ul><li>extensive change to a core product, just like Chef TM was</li></ul><p>For my special cases, even enabling non-line-based backends like my <a href=https://github.com/sgre-chef/train-rest>train-rest</a> plugin would be ideal. This would not only enable users to author Target Mode resources and get their state but also put it into external integration like the recently announced <a href=https://blog.chef.io/now-available-servicenow-cmdb-integration/>ServiceNow CMDB connector</a>. For enterprise customers, that would close a gap in their compliance stance.</p><h2 id=summary>Summary</h2><p>So should you use Target Mode in 2020? I think the answer is a clear &ldquo;no&rdquo; as it is still too experimental and the discovery issue need to be solved.</p><p>As soon as that is the case, partners can start authoring vendor-specific kits though. While Chef would need to update, merge, and support things like OhBye or the Train discovery plugin format, the community could go ahead and write resources specific to their customers.</p><p>This would open up a whole new marketplace where specialized partners could sell and support their resource packs. From our customers, I know that this would be a welcome addition to the Chef ecosystem.</p></div></div></article><article class=uk-article><div class=container><section class=author-box itemprop=author itemscope itemtype=https://schema.org/Person><div class="media author-box"><div class=media-figure><img alt="Author Image" src=/authors/theinen.png class="avatar avatar-100 photo" height=125 width=125></div><div class=media-body><h2><a href=/authors/thomas-heinen>Thomas Heinen</a></h2><p>Thomas is a Cloud Consultant and Trainer at tecRacer Consulting with a focus on Chef, AWS, DevOps and Security.</p><div class=author-icons><a target=_self class=author-website title="Thomas Heinen's Author Profile" href=/authors/thomas-heinen data-original-title="Author's Profile"><i class="fas fa-id-card"></i></a><a target=_new class=author-xing title="Thomas Heinen on Xing" href=https://xing.com/profile/Thomas_Heinen4 data-original-title=Xing><i class="fab fa-xing"></i></a><a target=_new class=author-linkedin title="Thomas Heinen on LinkedIn" href=https://linkedin.com/in/thomas-heinen data-original-title=LinkdIn><i class="fab fa-linkedin"></i></a><a target=_new class=author-github title="Thomas Heinen on GitHub" href=https://github.com/tecracer-theinen data-original-title=Github><i class="fab fa-github"></i></a></div></div></div></section></div></article></main></div><div id=tm-footer class=tm-footer><div id=tm-footer class="tm-footer tm-footer-margin-top"><div class="uk-panel uk-panel-space uk-text-center"><p>Copyright © 2018-today by <a href=https://chef.tecracer.de/ target=_blank>tecRacer</a></p></div></div></div><div id=offcanvas class=uk-offcanvas aria-hidden=true><div class="uk-offcanvas-bar uk-offcanvas-bar-flip"><div class="uk-panel uk-text-center"><a href=https://tecracer-chef.github.io/></a><img src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt></a></div><ul class="uk-nav uk-nav-offcanvas"><li><a href=/>Blog</a></li><li><a href=/authors>Authors</a></li><li><a href=/github/github-prs.html>Pull Requests</a></li></ul></div></div></div></body></html>
+<!doctype html><html lang=en>
+<head>
+<meta charset=utf-8>
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<title>The State of Target Mode in 2020 | tecRacer Chef</title>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<link rel=canonical href=https://tecracer-chef.github.io/2020/06/the-state-of-target-mode-in-2020/>
+<meta http-equiv=content-language content="en-us">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="tecRacer Chef">
+<meta property="og:title" content="The State of Target Mode in 2020">
+<meta property="og:url" content="https://tecracer-chef.github.io/2020/06/the-state-of-target-mode-in-2020/">
+<meta property="og:image" content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:title content="tecRacer Chef">
+<meta name=twitter:url content="https://tecracer-chef.github.io/2020/06/the-state-of-target-mode-in-2020/">
+<meta name=twitter:image content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:card content>
+<link rel=alternate href=/blog/feed title="Patrick Schaumburg" type=application/rss+xml>
+<link href=https://tecracer-chef.github.io/css/theme.css rel=stylesheet>
+<script src=https://tecracer-chef.github.io/js/jquery.min.js></script>
+<script src=https://tecracer-chef.github.io/js/uikit.min.js></script>
+<script src=https://tecracer-chef.github.io/js/fa-all.js></script>
+</head>
+<body>
+<div class="uk-container uk-container-center">
+<div class=tm-header>
+<div class="tm-toolbar uk-clearfix uk-hidden-small">
+<div class=uk-float-right>
+<div class=uk-panel>
+<ul class=uk-subnav>
+<li><a href=https://github.com/tecracer-chef class="uk-icon-hover uk-icon-small uk-icon-github" target=_blank></a></li>
+<li><a href=https://twitter.com/tecracer class="uk-icon-hover uk-icon-small uk-icon-twitter" target=_blank></a></li>
+<li><a href=https://www.xing.com/companies/tecracergmbh%26co.kg class="uk-icon-hover uk-icon-small uk-icon-xing" target=_blank></a></li>
+<li><a href=https://www.linkedin.com/company/tecracer-group/ class="uk-icon-hover uk-icon-small uk-icon-linkedin" target=_blank></a></li>
+<li><a href=https://www.facebook.com/tecRacer class="uk-icon-hover uk-icon-small uk-icon-facebook" target=_blank></a></li>
+</ul>
+</div>
+</div>
+</div>
+<nav class=uk-navbar>
+<a class=uk-navbar-brand href=/>
+<img class="tm-logo uk-responsive-height uk-hidden-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+<img class="tm-logo-small uk-responsive-height uk-visible-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+<div class=uk-hidden-small>
+<ul class=uk-navbar-nav>
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+<div class="uk-navbar-flip uk-visible-small">
+<a href=#offcanvas class=uk-navbar-toggle data-uk-offcanvas></a>
+</div>
+</nav>
+</div>
+<div id=content>
+<main id=tm-content class=tm-content>
+<article class=uk-article>
+<div class="tm-article-featured-image uk-cover-background" style=background-image:url(/img/2020/06/laimannung-6Ptwy-nDnoE-unsplash.jpg)></div>
+<div class="tm-article-content uk-position-relative">
+<div class="tm-article-date uk-text-center">
+<span class=tm-article-date-day>
+16
+</span>
+<span class=tm-article-date-month>
+Jun
+</span>
+</div>
+<h1 class=uk-article-title>The State of Target Mode in 2020</h1>
+<p class=uk-article-meta>
+Written by
+<a target=_self title="Thomas Heinen's Author Profile SINGLE.HTML" href=/authors/thomas-heinen data-original-title="Author's Profile">Thomas Heinen</a>
+</p>
+<div class=uk-margin>
+<h1 id=the-state-of-target-mode-in-2020>The State of Target Mode in 2020</h1>
+<p>After my blog series on the agentless use of Chef dubbed &ldquo;Target Mode&rdquo; between August and October 2019, it is time to review what happened since.</p>
+<p><strong>Updated 14th October 2020</strong></p>
+<h2 id=update-14th-october-2020>Update (14th October 2020)</h2>
+<p>With the <a href=https://discourse.chef.io/t/chef-infra-client-16-6-14-released/17807>release of Chef 16.6</a>, improvements to enable Remote Ohai have been included into the Chef core. After talking with the Chef engineers, discussing <a href=https://github.com/chef/ohai/pull/1480>my PoC</a> and some adjustments for stability, the Chef Target Mode should now be usable by everyone.</p>
+<p>That being said, while Ohai can collect remote system data, the support for remote capable resources has not changed. If you are fine with writing your own custom resources using the Train interface, you now have a completely new approach to managing remote systems though.</p>
+<h2 id=target-mode-in-a-nutshell>Target Mode in a Nutshell</h2>
+<p>Target Mode (abbreviated TM) made its first appearance in Chef 15.1 as an experimental and undocumented feature. The idea behind it is that not every machine will have (or even support) a Chef agent, but might still be desired to be in a certain state. To enable this, the Chef developers rely on the Train library, which is the transport backend for Chef&rsquo;s popular InSpec product.</p>
+<p>This approach makes it possible to have a pluggable backend infrastructure from standard SSH/WinRM to user-supported ones like Telnet, AWS SystemsManager, or even exotic ones like USB/Serial interfaces and REST APIs.</p>
+<p>Relying on a line-based protocol, any existing Chef resource that just executes commands could be made &ldquo;Target Mode Ready&rdquo; by simply swapping local execution to remote execution. When TM debuted, all resources within Chef who used this pattern were made available. But it&rsquo;s only a handful of them.</p>
+<h2 id=the-current-state>The Current State</h2>
+<p>After some time has passed, I got curious about what had changed since my initial adventures.</p>
+<p>There has been no documentation upgrade, so how to even start with TM will remain a mystery to anyone who did not find third party blog posts. Just before this blog post, I checked if any of those initial code sections were touched since - only to find them unchanged in almost two years.</p>
+<p>Is that a bad thing? Not necessarily. When I did some POC work on Target Mode in late 2019 I found it to be pretty straightforward and stable already. Following the path of just swapping the backend by some helper libraries and doing easy case distinctions, the code does not leave much room for error.</p>
+<p>But one thing is problematic about this: if you look at the <a href=https://github.com/chef/chef/blame/b9044b607af4a09738db65119c40490fcd9f972d/lib/chef/client.rb#L584-L603>the code where remote system data gets collected</a> you find it very static. For a system that is supposed to do an inventory run to determine, what the current state is and how it relates to desired, that is a big gap.</p>
+<p>To iterate once again: There is no built-in remote discovery except for four OS-related bits of info. And no way to add any more.</p>
+<h2 id=the-dirty-way>The Dirty Way</h2>
+<p>I will not go into details here, because it is no solution for anything but exploration. But with some Ruby metaprogramming you can hook into that method from the outside and inject your own discovery data into that <a href=https://github.com/chef/chef/blob/9d5f5c40362d1fd7b0323cf0880300d6165b3a94/lib/chef/client.rb#L160-L164>mock Ohai object</a>. This enables you to work with remote data exactly in the same way as with a local system. But in reality, you should not need to have that knowledge. Things should just be there. Or even an interface to get them yourself.</p>
+<p>How would Chef be able to solve this?</p>
+<h2 id=extending-train-capabilities>Extending Train Capabilities</h2>
+<p>The Train library already includes some minimalistic discovery functionality, as you can see in the <code>get_ohai_data_remotely</code> snippet of the Chef Client. As Train already has a plugin system for backends, this would be pretty straightforward: Add a new plugin type with platform filters (only run Cisco related filters on Cisco devices and such), cycle over matching plugins on connecting and pull it into the Chef Client as remote data.</p>
+<p>This approach is the one I took in my PoC, where I had to do some black magic to modify the Chef client to do this. If you discount for the black magic, this is a 10 line modification of Chef and 1 additional plugin definition in Train.</p>
+<p>Pros:</p>
+<ul>
+<li>lightweight</li>
+<li>authoring of plugins by users, for any platform</li>
+<li>limited modification of existing core products</li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li>every discovery needs to be written from scratch</li>
+</ul>
+<h2 id=changing-ohai>Changing Ohai</h2>
+<p>While the Train extension is suitable for exotic platforms (read: non-Chef supported like industrial devices or networking gear), it misses out on a huge chance if the remote system is just standard Linux. As Chef already has a powerful on-system discovery tool with Ohai, this would be the second route: making Ohai work on remote systems.</p>
+<p>Unknown to most, this approach was taken by Chef themselves under the nickname &ldquo;OhBye&rdquo;. It is hidden deep in the GitHub repositories, only to be pointed out if you ask Chef developers about remote discovery. Lifting the vail today, so you can <a href=https://github.com/chef/ohai/commit/8d0c61ad1d31cddb4efe0f7f2f55d4a42dcb8d75>look at OhBye yourself</a>.</p>
+<p>This takes a similar approach to the Chef Target Mode: adding an additional parameter to Ohai, adding a new second parameter to Ohai plugins (for the backend to use: local or remote), and then issuing the commands on there.</p>
+<p>The code for OhBye was committed in March 2019, around the same time as Target Mode appeared. If you compare it to the current Ohai implementation, you can see it was never merged though. Looking at the code, this is clearly just a Proof of Concept as there are still commented-out calls to <code>binding.pry</code> in it.</p>
+<p>By hooking into Ohai the way it did, it would leverage all platform detection features of Ohai and instantly enable things like Solaris support for example. With some more flexibility, there&rsquo;s no reason against adding discovery for network devices and similar as it would just execute vendor-specific commands over some backend and parse the results.</p>
+<p>Apart from being a dead-end at this point in time, the extensibility of this approach and instant functional gain is impressive. While the backend switching logic would have to be modified to dynamically use train plugins (which already return their URI scheme anyway), this is promising.</p>
+<p>Pros:</p>
+<ul>
+<li>uses the whole existing discovery infrastructure on supported platforms</li>
+<li>could be enabled to support additional platforms</li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li>extensive change to a core product, just like Chef TM was</li>
+</ul>
+<p>For my special cases, even enabling non-line-based backends like my <a href=https://github.com/sgre-chef/train-rest>train-rest</a> plugin would be ideal. This would not only enable users to author Target Mode resources and get their state but also put it into external integration like the recently announced <a href=https://blog.chef.io/now-available-servicenow-cmdb-integration/>ServiceNow CMDB connector</a>. For enterprise customers, that would close a gap in their compliance stance.</p>
+<h2 id=summary>Summary</h2>
+<p>So should you use Target Mode in 2020? I think the answer is a clear &ldquo;no&rdquo; as it is still too experimental and the discovery issue need to be solved.</p>
+<p>As soon as that is the case, partners can start authoring vendor-specific kits though. While Chef would need to update, merge, and support things like OhBye or the Train discovery plugin format, the community could go ahead and write resources specific to their customers.</p>
+<p>This would open up a whole new marketplace where specialized partners could sell and support their resource packs. From our customers, I know that this would be a welcome addition to the Chef ecosystem.</p>
+</div>
+</div>
+</article>
+<article class=uk-article>
+<div class=container>
+<section class=author-box itemprop=author itemscope itemtype=https://schema.org/Person>
+<div class="media author-box">
+<div class=media-figure>
+<img alt="Author Image" src=/authors/theinen.png class="avatar avatar-100 photo" height=125 width=125>
+</div>
+<div class=media-body>
+<h2><a href=/authors/thomas-heinen>Thomas Heinen</a></h2>
+<p>
+Thomas is a Cloud Consultant and Trainer at tecRacer Consulting with a focus on Chef, AWS, DevOps and Security.
+</p>
+<div class=author-icons>
+<a target=_self class=author-website title="Thomas Heinen's Author Profile" href=/authors/thomas-heinen data-original-title="Author's Profile">
+<i class="fas fa-id-card"></i>
+</a>
+<a target=_new class=author-xing title="Thomas Heinen on Xing" href=https://xing.com/profile/Thomas_Heinen4 data-original-title=Xing>
+<i class="fab fa-xing"></i>
+</a>
+<a target=_new class=author-linkedin title="Thomas Heinen on LinkedIn" href=https://linkedin.com/in/thomas-heinen data-original-title=LinkdIn>
+<i class="fab fa-linkedin"></i>
+</a>
+<a target=_new class=author-github title="Thomas Heinen on GitHub" href=https://github.com/tecracer-theinen data-original-title=Github>
+<i class="fab fa-github"></i>
+</a>
+</div>
+</div>
+</div>
+</section>
+</div>
+</article>
+</main>
+</div>
+<div id=tm-footer class=tm-footer>
+<div id=tm-footer class="tm-footer tm-footer-margin-top">
+<div class="uk-panel uk-panel-space uk-text-center">
+<p>Copyright © 2018-today by <a href=https://chef.tecracer.de/ target=_blank>tecRacer</a></p>
+</div>
+</div>
+</div><div id=offcanvas class=uk-offcanvas aria-hidden=true>
+<div class="uk-offcanvas-bar uk-offcanvas-bar-flip">
+<div class="uk-panel uk-text-center">
+<a href=https://tecracer-chef.github.io/></a>
+<img src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+</div>
+<ul class="uk-nav uk-nav-offcanvas">
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+</div>
+</div>
+</body>
+</html>
