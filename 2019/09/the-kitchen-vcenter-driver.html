@@ -1,0 +1,178 @@
+<!doctype html><html lang=en>
+<head>
+<meta charset=utf-8>
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<title>The kitchen-vcenter Driver | tecRacer Chef</title>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<link rel=canonical href=https://tecracer-chef.github.io/2019/09/the-kitchen-vcenter-driver.html>
+<meta http-equiv=content-language content="en-us">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="tecRacer Chef">
+<meta property="og:title" content="The kitchen-vcenter Driver">
+<meta property="og:url" content="https://tecracer-chef.github.io/2019/09/the-kitchen-vcenter-driver.html">
+<meta property="og:image" content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:title content="tecRacer Chef">
+<meta name=twitter:url content="https://tecracer-chef.github.io/2019/09/the-kitchen-vcenter-driver.html">
+<meta name=twitter:image content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:card content>
+<link rel=alternate href=/blog/feed title="Patrick Schaumburg" type=application/rss+xml>
+<link href=https://tecracer-chef.github.io/css/theme.css rel=stylesheet>
+<script src=https://tecracer-chef.github.io/js/jquery.min.js></script>
+<script src=https://tecracer-chef.github.io/js/uikit.min.js></script>
+<script src=https://tecracer-chef.github.io/js/fa-all.js></script>
+</head>
+<body>
+<div class="uk-container uk-container-center">
+<div class=tm-header>
+<div class="tm-toolbar uk-clearfix uk-hidden-small">
+<div class=uk-float-right>
+<div class=uk-panel>
+<ul class=uk-subnav>
+<li><a href=https://github.com/tecracer-chef class="uk-icon-hover uk-icon-small uk-icon-github" target=_blank></a></li>
+<li><a href=https://twitter.com/tecracer class="uk-icon-hover uk-icon-small uk-icon-twitter" target=_blank></a></li>
+<li><a href=https://www.xing.com/companies/tecracergmbh%26co.kg class="uk-icon-hover uk-icon-small uk-icon-xing" target=_blank></a></li>
+<li><a href=https://www.linkedin.com/company/tecracer-group/ class="uk-icon-hover uk-icon-small uk-icon-linkedin" target=_blank></a></li>
+<li><a href=https://www.facebook.com/tecRacer class="uk-icon-hover uk-icon-small uk-icon-facebook" target=_blank></a></li>
+</ul>
+</div>
+</div>
+</div>
+<nav class=uk-navbar>
+<a class=uk-navbar-brand href=/>
+<img class="tm-logo uk-responsive-height uk-hidden-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+<img class="tm-logo-small uk-responsive-height uk-visible-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+<div class=uk-hidden-small>
+<ul class=uk-navbar-nav>
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+<div class="uk-navbar-flip uk-visible-small">
+<a href=#offcanvas class=uk-navbar-toggle data-uk-offcanvas></a>
+</div>
+</nav>
+</div>
+<div id=content>
+<main id=tm-content class=tm-content>
+<article class=uk-article>
+<div class="tm-article-featured-image uk-cover-background" style=background-image:url(/img/2019/09/taylor-vick-M5tzZtFCOfs-unsplash.jpg)></div>
+<div class="tm-article-content uk-position-relative">
+<div class="tm-article-date uk-text-center">
+<span class=tm-article-date-day>
+27
+</span>
+<span class=tm-article-date-month>
+Sep
+</span>
+</div>
+<h1 class=uk-article-title>The kitchen-vcenter Driver</h1>
+<p class=uk-article-meta>
+Written by
+<a target=_self title="Thomas Heinen's Author Profile SINGLE.HTML" href=/authors/thomas-heinen data-original-title="Author's Profile">Thomas Heinen</a>
+</p>
+<div class=uk-margin>
+<h1 id=the-kitchen-vcenter-driver>The kitchen-vcenter Driver</h1>
+<p>While many companies already rely on some Cloud for all of their IT systems, bigger enterprise customers often have own data centers which consist of thousands of virtual machines. Under these circumstances, it is often not desirable to only test Chef cookbooks on AWS or Azure, but doing this in the real environment is a better idea. The <code>kitchen-vcenter</code> driver allows you to harness the power of your own IT systems.</p>
+<h2 id=background>Background</h2>
+<p>In some projects we are working with air-gapped systems or migrate entire datacenters to configuration management using Chef. As anybody who had to work in such an environment can confirm, this poses unique challenges. Sometimes you have to rely on internal artifact servers like <a href=https://jfrog.com/artifactory/>JFrog Artifactory</a> and cannot simply install any tool from the Internet. In other situations, you are forced to use internal proxy servers for connectivity or have very special Windows OEM images which differ greatly from stuff you can find in the Cloud.</p>
+<p>While searching for something more resemblant of on premises testing, I came across the <a href=https://github.com/chef/kitchen-vcenter/>kitchen-vcenter driver on Github</a> which was pretty old and bulky at that time. Luckily, two customers agreed to sponsor a complete rewrite and still continue to support development of new features. Of these two, <a href=https://www.siemensgamesa.com/en-int>Siemens Gamesa</a> is also proud to be openly named as a sponsor of this project and other Chef-related contributions. Big thanks to them for making all these enhancements possible.</p>
+<p>Over the next few posts, I will detail the features and unique possibilities that the new driver offers for those situations.</p>
+<h2 id=installation--configuration>Installation & Configuration</h2>
+<p>Installation of the driver is pretty simple now:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>gem install kitchen-vcenter
+</code></pre></div><p>If you tried to use the driver before September 2019, you might have had problems especially on Windows due to some obscure dependencies which were present before (specifically the <code>ethon</code> gem). Due to the work of J.R. Garcia from VMware, this problem was recently fixed in the underlying <a href=https://github.com/vmware/vsphere-automation-sdk-ruby>vsphere-automation-sdk-ruby Gem</a> in versions 0.4.0 and up. Thanks!</p>
+<p>As soon as you installed the gem, you can start adding the necessary options to your <code>.kitchen.yml</code> file:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:green;font-weight:700>driver</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>vcenter<span style=color:#bbb>
+</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>vcenter_disable_ssl_verify</span>:<span style=color:#bbb> </span><span style=color:green;font-weight:700>true</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>vcenter_host</span>:<span style=color:#bbb> </span>vcsa.lab.local<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>vcenter_username</span>:<span style=color:#bbb> </span><span style=color:#ba2121>&#34;&lt;%= ENV[&#39;vcenter_user&#39;] %&gt;&#34;</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>vcenter_password</span>:<span style=color:#bbb> </span><span style=color:#ba2121>&#34;&lt;%= ENV[&#39;vcenter_password&#39;] %&gt;&#34;</span><span style=color:#bbb>
+</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>datacenter</span>:<span style=color:#bbb> </span><span style=color:#ba2121>&#34;Datacenter&#34;</span><span style=color:#bbb>
+</span><span style=color:#bbb>  
+</span><span style=color:#bbb></span><span style=color:green;font-weight:700>platforms</span>:<span style=color:#bbb>
+</span><span style=color:#bbb> </span>- <span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>win2016<span style=color:#bbb>
+</span><span style=color:#bbb>   </span><span style=color:green;font-weight:700>driver</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>     </span><span style=color:green;font-weight:700>template</span>:<span style=color:#bbb> </span><span style=color:#ba2121>&#39;win2016-template&#39;</span><span style=color:#bbb>
+</span></code></pre></div><p>At this point, I will assume either you or your organization VMware admin have created a technical user for all your Test Kitchen needs. I tried to include a reference of needed permissions in the project&rsquo;s <a href=https://github.com/chef/kitchen-vcenter/blob/master/README.md>README.md</a> file - if anything is missing, please create an issue and I will try to improve on this.</p>
+<p>The main points in the configuration are of course the credentials to your vCenter server. You should never put real users and passwords into this file, because they might end up in GIT. Using environment variables has proven valuable for this, sometimes we even have most of the configuration values handled in that way.</p>
+<p>In most environments, the VMware SSL certificates seem to be self-signed or the internal CA certificates are not distributed properly. That is why the SSL verification is often skipped. Managing a VMware related PKI is a bit complicated, as I heard.</p>
+<h2 id=location>Location</h2>
+<p>You will need to supply the name of your vCenter datacenter that the VMs should be created in. Datacenters are a foundational organizational unit in vCenter which specify the exact location of virtual machines.</p>
+<p>If you have more specific needs, you can be more specific:</p>
+<ul>
+<li><code>cluster</code> can specify a designated development cluster of ESX hosts</li>
+<li><code>targethost</code> can be used to reference a specific ESX server to deploy to</li>
+<li><code>folder</code> specifies a VM folder to group your kitchen machines</li>
+</ul>
+<p>While a <code>resource_pool</code> is also often used to group VMs, this is generally not a good idea and is a legacy setting of the driver:</p>
+<p>In VMware, resource pools are used to create a hierarchy to distribute CPU or Memory across virtual machines. If your vCenter had only to 2 VMs on the &ldquo;top level&rdquo; and next to it a resource pool with 10 VMs in it, those 10 VMs will only get 1/3rd of the allocated resources. Please use <code>folder</code> to organize your kitchen instances due to this reason.</p>
+<h2 id=using-templates>Using Templates</h2>
+<p>As there is no automatic lookup of matching templates (compared to the <a href=https://github.com/test-kitchen/kitchen-ec2>kitchen-ec2 driver</a>), we have to point Test Kitchen to the base of our VM. Currently, you can only use normal VM templates and not the newer Content library - sorry!</p>
+<p>While the parameter is called <code>template</code>, it will also accept a VM. For some types of clones this is even necessary, the details will be in another post.</p>
+<p>Please remember to include the VMware tools or <a href=https://github.com/vmware/open-vm-tools>open-vm-tools</a> in your templates. These are important to allow vCenter to get info about the IP of the machine and is a hard requirement for using the kitchen-vcenter driver.</p>
+<h2 id=clone-types>Clone Types</h2>
+<p>If you are trying this out and wonder about the time it takes to get a new VM: for now, we are copying the disk of the template before starting the VM (a Full Clone). In later posts, we will look at other clone types which are much faster.</p>
+</div>
+</div>
+</article>
+<article class=uk-article>
+<div class=container>
+<section class=author-box itemprop=author itemscope itemtype=https://schema.org/Person>
+<div class="media author-box">
+<div class=media-figure>
+<img alt="Author Image" src=/authors/theinen.png class="avatar avatar-100 photo" height=125 width=125>
+</div>
+<div class=media-body>
+<h2><a href=/authors/thomas-heinen>Thomas Heinen</a></h2>
+<p>
+Thomas is a Cloud Consultant and Trainer at tecRacer Consulting with a focus on Chef, AWS, DevOps and Security.
+</p>
+<div class=author-icons>
+<a target=_self class=author-website title="Thomas Heinen's Author Profile" href=/authors/thomas-heinen data-original-title="Author's Profile">
+<i class="fas fa-id-card"></i>
+</a>
+<a target=_new class=author-xing title="Thomas Heinen on Xing" href=https://xing.com/profile/Thomas_Heinen4 data-original-title=Xing>
+<i class="fab fa-xing"></i>
+</a>
+<a target=_new class=author-linkedin title="Thomas Heinen on LinkedIn" href=https://linkedin.com/in/thomas-heinen data-original-title=LinkdIn>
+<i class="fab fa-linkedin"></i>
+</a>
+<a target=_new class=author-github title="Thomas Heinen on GitHub" href=https://github.com/tecracer-theinen data-original-title=Github>
+<i class="fab fa-github"></i>
+</a>
+</div>
+</div>
+</div>
+</section>
+</div>
+</article>
+</main>
+</div>
+<div id=tm-footer class=tm-footer>
+<div id=tm-footer class="tm-footer tm-footer-margin-top">
+<div class="uk-panel uk-panel-space uk-text-center">
+<p>Copyright © 2018-today by <a href=https://chef.tecracer.de/ target=_blank>tecRacer</a></p>
+</div>
+</div>
+</div><div id=offcanvas class=uk-offcanvas aria-hidden=true>
+<div class="uk-offcanvas-bar uk-offcanvas-bar-flip">
+<div class="uk-panel uk-text-center">
+<a href=https://tecracer-chef.github.io/></a>
+<img src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+</div>
+<ul class="uk-nav uk-nav-offcanvas">
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+</div>
+</div>
+</body>
+</html>

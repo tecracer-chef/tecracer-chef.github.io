@@ -1,0 +1,180 @@
+<!doctype html><html lang=en>
+<head>
+<meta charset=utf-8>
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<title>Update your Style in Test Kitchen (Part 2) | tecRacer Chef</title>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<link rel=canonical href=https://tecracer-chef.github.io/2021/10/update-your-style-in-test-kitchen-part-2.html>
+<meta http-equiv=content-language content="en-us">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="tecRacer Chef">
+<meta property="og:title" content="Update your Style in Test Kitchen (Part 2)">
+<meta property="og:url" content="https://tecracer-chef.github.io/2021/10/update-your-style-in-test-kitchen-part-2.html">
+<meta property="og:image" content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:title content="tecRacer Chef">
+<meta name=twitter:url content="https://tecracer-chef.github.io/2021/10/update-your-style-in-test-kitchen-part-2.html">
+<meta name=twitter:image content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:card content>
+<link rel=alternate href=/blog/feed title="Patrick Schaumburg" type=application/rss+xml>
+<link href=https://tecracer-chef.github.io/css/theme.css rel=stylesheet>
+<script src=https://tecracer-chef.github.io/js/jquery.min.js></script>
+<script src=https://tecracer-chef.github.io/js/uikit.min.js></script>
+<script src=https://tecracer-chef.github.io/js/fa-all.js></script>
+</head>
+<body>
+<div class="uk-container uk-container-center">
+<div class=tm-header>
+<div class="tm-toolbar uk-clearfix uk-hidden-small">
+<div class=uk-float-right>
+<div class=uk-panel>
+<ul class=uk-subnav>
+<li><a href=https://github.com/tecracer-chef class="uk-icon-hover uk-icon-small uk-icon-github" target=_blank></a></li>
+<li><a href=https://twitter.com/tecracer class="uk-icon-hover uk-icon-small uk-icon-twitter" target=_blank></a></li>
+<li><a href=https://www.xing.com/companies/tecracergmbh%26co.kg class="uk-icon-hover uk-icon-small uk-icon-xing" target=_blank></a></li>
+<li><a href=https://www.linkedin.com/company/tecracer-group/ class="uk-icon-hover uk-icon-small uk-icon-linkedin" target=_blank></a></li>
+<li><a href=https://www.facebook.com/tecRacer class="uk-icon-hover uk-icon-small uk-icon-facebook" target=_blank></a></li>
+</ul>
+</div>
+</div>
+</div>
+<nav class=uk-navbar>
+<a class=uk-navbar-brand href=/>
+<img class="tm-logo uk-responsive-height uk-hidden-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+<img class="tm-logo-small uk-responsive-height uk-visible-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+<div class=uk-hidden-small>
+<ul class=uk-navbar-nav>
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+<div class="uk-navbar-flip uk-visible-small">
+<a href=#offcanvas class=uk-navbar-toggle data-uk-offcanvas></a>
+</div>
+</nav>
+</div>
+<div id=content>
+<main id=tm-content class=tm-content>
+<article class=uk-article>
+<div class="tm-article-featured-image uk-cover-background" style=background-image:url(/img/2021/10/pexels-david-mceachan-71241.jpg)></div>
+<div class="tm-article-content uk-position-relative">
+<div class="tm-article-date uk-text-center">
+<span class=tm-article-date-day>
+25
+</span>
+<span class=tm-article-date-month>
+Oct
+</span>
+</div>
+<h1 class=uk-article-title>Update your Style in Test Kitchen (Part 2)</h1>
+<p class=uk-article-meta>
+Written by
+<a target=_self title="Thomas Heinen's Author Profile SINGLE.HTML" href=/authors/thomas-heinen data-original-title="Author's Profile">Thomas Heinen</a>
+</p>
+<div class=uk-margin>
+<p>It is time for a follow-up to my <a href=https://aws-blog.de/2020/06/update-your-style-in-test-kitchen.html>blog post from last year</a> - especially as Test Kitchen 3.0 changed some defaults. Let&rsquo;s check some cargo-culted settings out in this blog post.</p>
+<p>As any Chef practitioner knows, the web is full of old and outdated info. That is particularly true to Chef, where the first hype around their solutions led to a huge number of blog posts and books.</p>
+<p>If you ever worked with fast-changing software, you know how quick info gets outdated. And reading those old blog posts and then copy-and-pasting information from &ldquo;known good&rdquo; configurations leads to really bloated projects.</p>
+<p>This second part to my series tries to make people aware of some nifty changes in the Chef (and Test Kitchen) universe.</p>
+<h2 id=chef_solo-or-chef_zero-well-actually>&ldquo;chef_solo&rdquo; or &ldquo;chef_zero&rdquo;? Well, actually</h2>
+<p>Surprise! The old-and-trusted <code>chef_zero</code> and <code>chef_solo</code> provisioners are a thing of the past.</p>
+<p>While you can still refer to both, <code>chef_zero</code> has merely been an alias to the newer <code>chef_infra</code> provisioner since TK 3.0. And as that is now the default, you would not need to specify a Provisioner name anymore.</p>
+<p>Remember to migrate away from <code>chef_solo</code> as well as it provides little to no benefit and still depends on Berkshelf.</p>
+<h2 id=exit-codes>Exit Codes</h2>
+<p>You can see many <code>kitchen.yml</code> (you did update your file names, didn&rsquo;t you?) files which still have settings around error codes, related to necessary reboots. Often you see a code fragment like this:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:green;font-weight:700>provisioner</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:#408080;font-style:italic># ...</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>retry_on_exit_code</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>    </span>- <span style=color:#666>35</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>client_rb</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>    </span><span style=color:green;font-weight:700>exit_status</span>:<span style=color:#bbb> </span>:enabled<span style=color:#bbb>
+</span><span style=color:#bbb>    </span><span style=color:green;font-weight:700>client_fork</span>:<span style=color:#bbb> </span><span style=color:green;font-weight:700>false</span><span style=color:#bbb>
+</span></code></pre></div><p>Do you have that somewhere? I admit I still found some of those when going through my old cookbooks, so nothing to feel ashamed about.</p>
+<p>But&mldr; it&rsquo;s all unnecessary. The <code>retry_on_exit_code</code> statement has actually defaulted to reboot-related exit codes since Test Kitchen v1.19.1 (November 2017!). And those two settings for <code>client_rb</code> have just taken up valuable storage place as they have been obsolete since Chef 13.11</p>
+<p><strong>So get rid of this, as we are not living in 2017 anymore :-)</strong></p>
+<h2 id=setting-always_update_cookbooks>Setting &ldquo;always_update_cookbooks&rdquo;</h2>
+<p>This one is pretty new and a change in Test Kitchen 3.0.0 - before that version, it defaulted to <code>false</code> but now is <code>true</code> <sup id=fnref:1><a href=#fn:1 class=footnote-ref role=doc-noteref>1</a></sup>.</p>
+<p>Another line to remove, if you used it.</p>
+<h2 id=minimum-tk-config>Minimum TK config</h2>
+<p>This leaves us with a nice and tiny, modern <code>kitchen.yml</code> file. I also added some ideas of valuable add-ons, if you want to write spotless and upward-compatible cookbooks.</p>
+<p>Have fun!</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:green;font-weight:700>provisioner</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>product_name</span>:<span style=color:#bbb> </span>chef<span style=color:#bbb>
+</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:#408080;font-style:italic># If you want to know if things wil be deprecated</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:#408080;font-style:italic># deprecations_as_errors: true</span><span style=color:#bbb>
+</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:#408080;font-style:italic># If you want to write idempotent recipes</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:#408080;font-style:italic># enforce_idempotency: true</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:#408080;font-style:italic># multiple_converge: 2</span><span style=color:#bbb>
+</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:#408080;font-style:italic># If you have recipes needing more than one reboot (default)</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:#408080;font-style:italic># max_retries: 5</span><span style=color:#bbb>
+</span></code></pre></div><section class=footnotes role=doc-endnotes>
+<hr>
+<ol>
+<li id=fn:1 role=doc-endnote>
+<p><a href=https://github.com/test-kitchen/test-kitchen/commit/0cadaf99983bc81c6c8a4ed7faae7aaaaa830754>always_update_cookbooks PR</a>&#160;<a href=#fnref:1 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p>
+</li>
+</ol>
+</section>
+</div>
+</div>
+</article>
+<article class=uk-article>
+<div class=container>
+<section class=author-box itemprop=author itemscope itemtype=https://schema.org/Person>
+<div class="media author-box">
+<div class=media-figure>
+<img alt="Author Image" src=/authors/theinen.png class="avatar avatar-100 photo" height=125 width=125>
+</div>
+<div class=media-body>
+<h2><a href=/authors/thomas-heinen>Thomas Heinen</a></h2>
+<p>
+Thomas is a Cloud Consultant and Trainer at tecRacer Consulting with a focus on Chef, AWS, DevOps and Security.
+</p>
+<div class=author-icons>
+<a target=_self class=author-website title="Thomas Heinen's Author Profile" href=/authors/thomas-heinen data-original-title="Author's Profile">
+<i class="fas fa-id-card"></i>
+</a>
+<a target=_new class=author-xing title="Thomas Heinen on Xing" href=https://xing.com/profile/Thomas_Heinen4 data-original-title=Xing>
+<i class="fab fa-xing"></i>
+</a>
+<a target=_new class=author-linkedin title="Thomas Heinen on LinkedIn" href=https://linkedin.com/in/thomas-heinen data-original-title=LinkdIn>
+<i class="fab fa-linkedin"></i>
+</a>
+<a target=_new class=author-github title="Thomas Heinen on GitHub" href=https://github.com/tecracer-theinen data-original-title=Github>
+<i class="fab fa-github"></i>
+</a>
+</div>
+</div>
+</div>
+</section>
+</div>
+</article>
+</main>
+</div>
+<div id=tm-footer class=tm-footer>
+<div id=tm-footer class="tm-footer tm-footer-margin-top">
+<div class="uk-panel uk-panel-space uk-text-center">
+<p>Copyright © 2018-today by <a href=https://chef.tecracer.de/ target=_blank>tecRacer</a></p>
+</div>
+</div>
+</div><div id=offcanvas class=uk-offcanvas aria-hidden=true>
+<div class="uk-offcanvas-bar uk-offcanvas-bar-flip">
+<div class="uk-panel uk-text-center">
+<a href=https://tecracer-chef.github.io/></a>
+<img src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+</div>
+<ul class="uk-nav uk-nav-offcanvas">
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+</div>
+</div>
+</body>
+</html>

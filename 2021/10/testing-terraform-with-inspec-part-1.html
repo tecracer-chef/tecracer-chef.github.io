@@ -1,0 +1,200 @@
+<!doctype html><html lang=en>
+<head>
+<meta charset=utf-8>
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<title>Testing Terraform with InSpec (Part 1) | tecRacer Chef</title>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<link rel=canonical href=https://tecracer-chef.github.io/2021/10/testing-terraform-with-inspec-part-1.html>
+<meta http-equiv=content-language content="en-us">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="tecRacer Chef">
+<meta property="og:title" content="Testing Terraform with InSpec (Part 1)">
+<meta property="og:url" content="https://tecracer-chef.github.io/2021/10/testing-terraform-with-inspec-part-1.html">
+<meta property="og:image" content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:title content="tecRacer Chef">
+<meta name=twitter:url content="https://tecracer-chef.github.io/2021/10/testing-terraform-with-inspec-part-1.html">
+<meta name=twitter:image content="https://tecracer-chef.github.io/images/">
+<meta name=twitter:card content>
+<link rel=alternate href=/blog/feed title="Patrick Schaumburg" type=application/rss+xml>
+<link href=https://tecracer-chef.github.io/css/theme.css rel=stylesheet>
+<script src=https://tecracer-chef.github.io/js/jquery.min.js></script>
+<script src=https://tecracer-chef.github.io/js/uikit.min.js></script>
+<script src=https://tecracer-chef.github.io/js/fa-all.js></script>
+</head>
+<body>
+<div class="uk-container uk-container-center">
+<div class=tm-header>
+<div class="tm-toolbar uk-clearfix uk-hidden-small">
+<div class=uk-float-right>
+<div class=uk-panel>
+<ul class=uk-subnav>
+<li><a href=https://github.com/tecracer-chef class="uk-icon-hover uk-icon-small uk-icon-github" target=_blank></a></li>
+<li><a href=https://twitter.com/tecracer class="uk-icon-hover uk-icon-small uk-icon-twitter" target=_blank></a></li>
+<li><a href=https://www.xing.com/companies/tecracergmbh%26co.kg class="uk-icon-hover uk-icon-small uk-icon-xing" target=_blank></a></li>
+<li><a href=https://www.linkedin.com/company/tecracer-group/ class="uk-icon-hover uk-icon-small uk-icon-linkedin" target=_blank></a></li>
+<li><a href=https://www.facebook.com/tecRacer class="uk-icon-hover uk-icon-small uk-icon-facebook" target=_blank></a></li>
+</ul>
+</div>
+</div>
+</div>
+<nav class=uk-navbar>
+<a class=uk-navbar-brand href=/>
+<img class="tm-logo uk-responsive-height uk-hidden-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+<img class="tm-logo-small uk-responsive-height uk-visible-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+<div class=uk-hidden-small>
+<ul class=uk-navbar-nav>
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+<div class="uk-navbar-flip uk-visible-small">
+<a href=#offcanvas class=uk-navbar-toggle data-uk-offcanvas></a>
+</div>
+</nav>
+</div>
+<div id=content>
+<main id=tm-content class=tm-content>
+<article class=uk-article>
+<div class="tm-article-featured-image uk-cover-background" style=background-image:url(/img/2021/10/pexels-pixabay-163016-41.jpg)></div>
+<div class="tm-article-content uk-position-relative">
+<div class="tm-article-date uk-text-center">
+<span class=tm-article-date-day>
+01
+</span>
+<span class=tm-article-date-month>
+Oct
+</span>
+</div>
+<h1 class=uk-article-title>Testing Terraform with InSpec (Part 1)</h1>
+<p class=uk-article-meta>
+Written by
+<a target=_self title="Thomas Heinen's Author Profile SINGLE.HTML" href=/authors/thomas-heinen data-original-title="Author's Profile">Thomas Heinen</a>
+</p>
+<div class=uk-margin>
+<p>While Infrastructure-as-Code slowly becomes omnipresent, many of the communicated advantages of the approach stay mostly unrealized. Sure, code style checks (linting) and even automated documentation get more common every month. But one of the cornerstones often gets ignore: testing.</p>
+<p>Let&rsquo;s see which types of code testing are available and how to do it without writing too much code.</p>
+<p>The promise of the Infrastructure-as-Code (short: IaC) movement is to handle infrastructure just as if it was a program. And adapt all the decades-old techniques for software engineering to get the most out of it.</p>
+<p>But as with any new technology, it is hard to realize all of the promised benefits. Many are well understood, others widely used but some provide elusive.</p>
+<h2 id=realized-benefits>Realized Benefits</h2>
+<p>To put one thing clear: Using IaC has massive advantages to manual installations and many of them are easy to realize - as long as you know basics of GIT (or another version control system you might prefer).</p>
+<p>Putting all your code into something like GIT immediately gives you features like <strong>traceability</strong> (who added what code at what point in time), <strong>rollback capability</strong> (undo code changes) and <strong>versioning</strong> of code (whether you use GIT tags or not). All this helps making your infrastructure setup more transparent.</p>
+<p>Even if you, at some point in time, want to change technologies or platforms you have an advantage here: you know that the code in your version control is exactly the one which created your systems. And you could still transpale this into another system, more or less. If you achieved the next steps: <strong>Reproducability and parametrization</strong>.</p>
+<p>These are actually some of the first steps where you can fail easily. Are there any manual steps involved with your setup? Do you rely on a specific AMI to create your systems (AMIs might get removed for various reasons)? Did you hardcode AWS regions, IP ranges, &mldr;?</p>
+<p>There is no general rule to address these items, many are connected to your actual use case. In this area, only practice makes perfect. Even if you find a magical 10-step plan on making your deployments reproducible, you will likely only live by the rules if you repeatedly failed following them.</p>
+<h2 id=advanced-benefits>Advanced Benefits</h2>
+<p>As soon as you work on code in a team, you will notice it will start to look non-uniform. If everybody in the team uses a different type of code indentation, different naming of components or confusing constructs (ternary operator, anyone?) things will escalate quickly. People do not understand the code anymore, hesitate to modify it or even include case distinctions to switch between old code and their own one.</p>
+<p>This is the domain of Linters and Fixers. These are tools which programmers love (read: disdain) which either prohibit using &ldquo;unclean&rdquo; constructs and formats in your code or adjust it to some <strong>community style</strong> guidelines. Why disdain? Well, do you want a colleague sitting next to you and comment about every typo in your code, even if he is right? But still, these tools are for the greater good - keeping your code clean and future-proof.</p>
+<p>Another quality gate are <strong>code reviews</strong>. People do not commit directly to version control, but they establish a process where colleagues have a look onto the changes and comment on quality, possible errors and alternative approaches. Only if you reach consensus on the code being appropriate, well-formed and suitable for long-term use, it will get merged into your common code base (often called a Pull Request or Merge Request).</p>
+<p>But if your code/infrastructure is complex, you need <strong>testing</strong>. And in many cases, manual testing will not cut it. If you have to check every one of the 20 different ways your parametrized code could execute, you will inavertedly miss one of them or even only test your new code.</p>
+<h2 id=types-of-testing>Types of Testing</h2>
+<p>Software testing is a whole profession by itself and has produced great books like <a href=https://learning.oreilly.com/library/view/agile-testing-a/9780321616944/>&ldquo;Agile Testing: A Practical Guide for Testers and Agile Teams&rdquo;</a> or <a href=https://learning.oreilly.com/library/view/more-agile-testing/9780133749571/>&ldquo;More Agile Testing: Learning Journeys for the Whole Team&rdquo;</a> by Janet Gregory and Lisa Crispin. While it&rsquo;s worth reading and provides many interesting insights, it might be slightly out of scope for a blog post.</p>
+<p>To put things short, there are different test types (often sorted into testing quadrants) which address different topics. Handling of edge conditions, correct execution, matching of expectations and functionality, behaviour under scalability or security aspects, etc.</p>
+<p>For Infrastructure-as-Code I would simplify it as follows:</p>
+<h3 id=unit-testing>Unit Testing</h3>
+<p>Testing code <em>without actually integrating with anything</em> - this is the domain of IaC concepts which rely on programming languages. For example, you can use the unit testing frameworks which come along with Typescript, Python or Go if you are using CDK.</p>
+<p>These unit tests are supposed to run quickly to test hundreds of execution paths within a few seconds. This can only be achieved by not calling out to AWS APIs, but instead sending back canned responses from the unit testing framework.</p>
+<h2 id=integration-testing>Integration Testing</h2>
+<p>In this step, actual infrastructure gets created. As these steps are slower, they will just be executed for some of the main use cases to test code changes. Some companies test all paths in periodic &ldquo;nightly&rdquo;/&ldquo;weekly&rdquo; tests and respond if one of the cases is broken.</p>
+<p>If your code creates a VPC, subnets, an IGW, NAT Gateways and some S3 Endpoint, your test will execute it and then check if your assumptions are met. Maybe your forgot some subnet? That test will fail and you know that you have to fix this.</p>
+<p>A problem with this is, that you write the same thing twice. You write code for creating a VPC and code for testing if it exists. While this seems like a waste of time, it actually avoids mistakes by typos or wrong assumptions. If you want to know how to write proper tests, check out <a href=https://learning.oreilly.com/library/view/the-art-of/9781617290893/>&ldquo;The Art of Unit Testing&rdquo;</a> by Ray Osherove - which is adaptable to integration tests as well.</p>
+<h3 id=localstack>LocalStack</h3>
+<p><a href=https://localstack.cloud/>LocalStack</a> is a mocking framework to imitate AWS APIs for speedy, local testing of solutions. In my opinion, this solutions falls between Unit and Integration testing, as it is a big component you need to install and integrate it.</p>
+<p>Personally, I would rather execute unit tests against my own mocks and later test AWS in an integration stage. This can be cleanly isolated using an <a href=https://alistair.cockburn.us/hexagonal-architecture/>old, but repopularized pattern called Hexagonal Architecture</a>. It recently saw a rise in popularity with blog entries from <a href=https://netflixtechblog.com/ready-for-changes-with-hexagonal-architecture-b315ec967749>The Netflix Tech Blog</a> and the <a href=https://aws.amazon.com/blogs/compute/developing-evolutionary-architecture-with-aws-lambda/>AWS Compute Blog</a>.</p>
+<p>But in the end, it&rsquo;s all about the specific use cases and your preferences.</p>
+<h3 id=end-to-end-testing>End-to-End Testing</h3>
+<p>Why test more, if we know that integration was successful? Because we tested the building block&rsquo;s existence, not their functionality.</p>
+<p>In our VPC example above, did you notice I did not mention route tables? So unless you try to access an instance within the VPC you will not notice something is missing. Your oversight is due to not testing the actual functionality.</p>
+<p>What if you could create an EC2 instance, automatically log into it and check if outgoing web requests work? That would greatly increase your code quality as you can cover parts of the actual user journey who would use instances in that VPC in production.</p>
+<h2 id=integration-tests-with-inspec--test-kitchen>Integration Tests with InSpec / Test Kitchen</h2>
+<p>In unexpected curveball, one of the solutions can be found in the area of Configuration Management. While this area also is part of Infrastructure-as-Code, it is more involved in setting up Operating Systems (OS) and applications on instances. But it yielded two tools which help a lot with Integration/Functional Testing.</p>
+<h3 id=inspec>InSpec</h3>
+<p><a href=https://inspec.io>InSpec</a> is a domain specific language (DSL) which is connected with Chef (recently purchased by Progress Software). While Chef Infra is the software for all those OS-level tasks, InSpec is its counterpart for testing:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ruby data-lang=ruby>describe port(<span style=color:#666>80</span>) <span style=color:green;font-weight:700>do</span>
+  it { should be_listening }
+<span style=color:green;font-weight:700>end</span>
+
+describe http(<span style=color:#ba2121>&#39;http://localhost/&#39;</span>) <span style=color:green;font-weight:700>do</span>
+  its(<span style=color:#ba2121>&#39;status&#39;</span>) { should eq <span style=color:#666>200</span> }
+  its(<span style=color:#ba2121>&#39;body&#39;</span>) { should <span style=color:green>include</span> <span style=color:#ba2121>&#39;Welcome&#39;</span> }
+<span style=color:green;font-weight:700>end</span>
+</code></pre></div><p>You can see how this bundles both testing types into one test profile. Is the port open? And does it return the right content?</p>
+<p>This is not limited to EC2 instance testing, as InSpec has resources for AWS as well:</p>
+<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ruby data-lang=ruby>describe aws_vpc(<span style=color:#ba2121>&#39;vpc-123456789&#39;</span>) <span style=color:green;font-weight:700>do</span>
+  it { should be_available }
+
+  its(<span style=color:#ba2121>&#39;cidr_block&#39;</span>) { should cmp <span style=color:#ba2121>&#39;10.0.0.0/16&#39;</span> }
+  its(<span style=color:#ba2121>&#39;instance_tenancy&#39;</span>) { should eq <span style=color:#ba2121>&#39;default&#39;</span> }
+<span style=color:green;font-weight:700>end</span>
+</code></pre></div><p>There are even ready-made InSpec tests to check if an AWS Account is matching best practices.</p>
+<h3 id=test-kitchen>Test Kitchen</h3>
+<p>While InSpec sounds nice, for testing you do not want to write huge shell scripts applying your Terraform/CDK infrastructure, executing code and then destroying it.</p>
+<p>This is where <a href=https://kitchen.ci/>Test Kitchen</a> comes into play, another community tool by Chef/Progress Software. Just as with InSpec it was first designed to manage VMs/EC2 Instances but got extended later on, specifically with the <a href=https://github.com/newcontext-oss/kitchen-terraform>Terraform Provisioner</a>.</p>
+<p>With a simple configuration file (<code>kitchen.yml</code>) in your project you can wire everything up so that Test Kitchen creates your Terraform infrastructure, executes various InSpec tests against it, tears it down and reports all successes/failures to you.</p>
+<p>You can even include a step of logging into created EC2 instances and do functional checks on them.</p>
+<h2 id=part-2-practical-walkthrough>Part 2: Practical Walkthrough</h2>
+<p>This post was very heavy on the theory side, but it is important to understand the challenges and basic terms to value Integration testing of IaC repositories. Too often people say that infrastructure does not need much testing or manual testing is enough - or that testing it automatically is too hard.</p>
+<p>I agree on the last part, if there is a clear distrintion between tools: If you have operations people working with descriptive languages like Terraform/Ansible and then require them to write Go-based code for <a href=https://terratest.gruntwork.io/>Terratest</a> - that is a tough sell.</p>
+<p>On the other hand, if your infrastructure is managed by software engineers with CDK then asking them to write tests in their preferred language is not too big of a deal.</p>
+<p>If you want to know more about CDK and testing that one, look at the <a href=https://aws-blog.de/2021/05/cit-build-cdk-infrastructure-testing-part-1-terratest-and-the-integrated-integration.html>blog acticle by my colleague Gernot</a>.</p>
+<p>For the complete walkthrough of Terraform, <a href=https://code.visualstudio.com/blogs/2019/05/02/remote-development>VSCode Dev Containers</a>, Test Kitchen and InSpec check out the second part of this post.</p>
+</div>
+</div>
+</article>
+<article class=uk-article>
+<div class=container>
+<section class=author-box itemprop=author itemscope itemtype=https://schema.org/Person>
+<div class="media author-box">
+<div class=media-figure>
+<img alt="Author Image" src=/authors/theinen.png class="avatar avatar-100 photo" height=125 width=125>
+</div>
+<div class=media-body>
+<h2><a href=/authors/thomas-heinen>Thomas Heinen</a></h2>
+<p>
+Thomas is a Cloud Consultant and Trainer at tecRacer Consulting with a focus on Chef, AWS, DevOps and Security.
+</p>
+<div class=author-icons>
+<a target=_self class=author-website title="Thomas Heinen's Author Profile" href=/authors/thomas-heinen data-original-title="Author's Profile">
+<i class="fas fa-id-card"></i>
+</a>
+<a target=_new class=author-xing title="Thomas Heinen on Xing" href=https://xing.com/profile/Thomas_Heinen4 data-original-title=Xing>
+<i class="fab fa-xing"></i>
+</a>
+<a target=_new class=author-linkedin title="Thomas Heinen on LinkedIn" href=https://linkedin.com/in/thomas-heinen data-original-title=LinkdIn>
+<i class="fab fa-linkedin"></i>
+</a>
+<a target=_new class=author-github title="Thomas Heinen on GitHub" href=https://github.com/tecracer-theinen data-original-title=Github>
+<i class="fab fa-github"></i>
+</a>
+</div>
+</div>
+</div>
+</section>
+</div>
+</article>
+</main>
+</div>
+<div id=tm-footer class=tm-footer>
+<div id=tm-footer class="tm-footer tm-footer-margin-top">
+<div class="uk-panel uk-panel-space uk-text-center">
+<p>Copyright © 2018-today by <a href=https://chef.tecracer.de/ target=_blank>tecRacer</a></p>
+</div>
+</div>
+</div><div id=offcanvas class=uk-offcanvas aria-hidden=true>
+<div class="uk-offcanvas-bar uk-offcanvas-bar-flip">
+<div class="uk-panel uk-text-center">
+<a href=https://tecracer-chef.github.io/></a>
+<img src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+</a>
+</div>
+<ul class="uk-nav uk-nav-offcanvas">
+<li><a href=/ title>Blog</a></li>
+<li><a href=/authors title>Authors</a></li>
+<li><a href=/github/github-prs.html title>Pull Requests</a></li>
+</ul>
+</div>
+</div>
+</div>
+</body>
+</html>
