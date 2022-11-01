@@ -1,183 +1,34 @@
-<!doctype html><html lang=en>
-<head>
-<meta charset=utf-8>
-<meta http-equiv=x-ua-compatible content="IE=edge">
-<title>The kitchen-ec2 Driver | tecRacer Chef</title>
-<meta name=viewport content="width=device-width,initial-scale=1">
-<link rel=canonical href=https://tecracer-chef.github.io/2019/09/the-kitchen-ec2-driver.html>
-<meta http-equiv=content-language content="en-us">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="tecRacer Chef">
-<meta property="og:title" content="The kitchen-ec2 Driver">
-<meta property="og:url" content="https://tecracer-chef.github.io/2019/09/the-kitchen-ec2-driver.html">
-<meta property="og:image" content="https://tecracer-chef.github.io/images/">
-<meta name=twitter:title content="tecRacer Chef">
-<meta name=twitter:url content="https://tecracer-chef.github.io/2019/09/the-kitchen-ec2-driver.html">
-<meta name=twitter:image content="https://tecracer-chef.github.io/images/">
-<meta name=twitter:card content>
-<link rel=alternate href=/blog/feed title="Patrick Schaumburg" type=application/rss+xml>
-<link href=https://tecracer-chef.github.io/css/theme.css rel=stylesheet>
-<script src=https://tecracer-chef.github.io/js/jquery.min.js></script>
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><title>The kitchen-ec2 Driver | tecRacer Chef</title><meta name=viewport content="width=device-width,initial-scale=1"><link rel=canonical href=https://tecracer-chef.github.io/2019/09/the-kitchen-ec2-driver.html><meta http-equiv=content-language content="en-us"><meta property="og:type" content="website"><meta property="og:site_name" content="tecRacer Chef"><meta property="og:title" content="The kitchen-ec2 Driver"><meta property="og:url" content="https://tecracer-chef.github.io/2019/09/the-kitchen-ec2-driver.html"><meta property="og:image" content="https://tecracer-chef.github.io/images/"><meta name=twitter:title content="tecRacer Chef"><meta name=twitter:url content="https://tecracer-chef.github.io/2019/09/the-kitchen-ec2-driver.html"><meta name=twitter:image content="https://tecracer-chef.github.io/images/"><meta name=twitter:card content><link rel=alternate href=/blog/feed title="Patrick Schaumburg" type=application/rss+xml><link href=https://tecracer-chef.github.io/css/theme.css rel=stylesheet><script src=https://tecracer-chef.github.io/js/jquery.min.js></script>
 <script src=https://tecracer-chef.github.io/js/uikit.min.js></script>
-<script src=https://tecracer-chef.github.io/js/fa-all.js></script>
-</head>
-<body>
-<div class="uk-container uk-container-center">
-<div class=tm-header>
-<div class="tm-toolbar uk-clearfix uk-hidden-small">
-<div class=uk-float-right>
-<div class=uk-panel>
-<ul class=uk-subnav>
-<li><a href=https://github.com/tecracer-chef class="uk-icon-hover uk-icon-small uk-icon-github" target=_blank></a></li>
-<li><a href=https://twitter.com/tecracer class="uk-icon-hover uk-icon-small uk-icon-twitter" target=_blank></a></li>
-<li><a href=https://www.xing.com/companies/tecracergmbh%26co.kg class="uk-icon-hover uk-icon-small uk-icon-xing" target=_blank></a></li>
-<li><a href=https://www.linkedin.com/company/tecracer-group/ class="uk-icon-hover uk-icon-small uk-icon-linkedin" target=_blank></a></li>
-<li><a href=https://www.facebook.com/tecRacer class="uk-icon-hover uk-icon-small uk-icon-facebook" target=_blank></a></li>
-</ul>
-</div>
-</div>
-</div>
-<nav class=uk-navbar>
-<a class=uk-navbar-brand href=/>
-<img class="tm-logo uk-responsive-height uk-hidden-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
-<img class="tm-logo-small uk-responsive-height uk-visible-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
-</a>
-<div class=uk-hidden-small>
-<ul class=uk-navbar-nav>
-<li><a href=/ title>Blog</a></li>
-<li><a href=/authors title>Authors</a></li>
-<li><a href=/github/github-prs.html title>Pull Requests</a></li>
-</ul>
-</div>
-<div class="uk-navbar-flip uk-visible-small">
-<a href=#offcanvas class=uk-navbar-toggle data-uk-offcanvas></a>
-</div>
-</nav>
-</div>
-<div id=content>
-<main id=tm-content class=tm-content>
-<article class=uk-article>
-<div class="tm-article-featured-image uk-cover-background" style=background-image:url(/img/2019/09/taylor-wilcox-cABI3p0F7rU-unsplash.jpg)></div>
-<div class="tm-article-content uk-position-relative">
-<div class="tm-article-date uk-text-center">
-<span class=tm-article-date-day>
-20
-</span>
-<span class=tm-article-date-month>
-Sep
-</span>
-</div>
-<h1 class=uk-article-title>The kitchen-ec2 Driver</h1>
-<p class=uk-article-meta>
-Written by
-<a target=_self title="Thomas Heinen's Author Profile SINGLE.HTML" href=/authors/thomas-heinen data-original-title="Author's Profile">Thomas Heinen</a>
-</p>
-<div class=uk-margin>
-<h1 id=the-kitchen-ec2-driver>The kitchen-ec2 Driver</h1>
-<p>Within the Chef ecosystem, Test Kitchen is one of the most useful tools. It offers the possibility to quickly test cookbooks in different OS environments on machines with a limited lifetime. That way, you can check if your fancy recipes work the same on RedHat, Centos 6 and Ubuntu. As speed is king, this fast feedback motivates more for early testing and reduces the amount of bugs found in production.</p>
-<h2 id=intro-to-kitchen>Intro to Kitchen</h2>
-<p>Test Kitchen covers the full lifecycle of a VM:</p>
-<ul>
-<li><code>create</code> a new machine</li>
-<li><code>converge</code> by setting up Chef/ChefDK, uploading cookbooks and executing them</li>
-<li><code>verify</code> if everything was done as intended (mostly using InSpec tests)</li>
-<li><code>destroy</code> the machines after testing to avoid inconsistencies later on</li>
-</ul>
-<p>All this can also be done in a single step via <code>kitchen test</code>, which will run through the whole cycle. When a machine succeeds, it will be deleted immediately (as it has served is cause) but a failed machine will be left running for diagnostics.</p>
-<p>(Side note: if you want to remove the failed machines as well, which is common to CI/CD pipelines, you can use <code>kitchen test --destroy always</code>)</p>
-<p>There are other posts detailing how to work with Test Kitchen (TK), configure different platforms and suites. In this series, our focus will be on the &ldquo;driver&rdquo; layer of TK which handles the (de)provisioning of virtual machines only.</p>
-<h2 id=kitchen-ec2>kitchen-ec2</h2>
-<p>While it is feasible to use local VMs, mostly via <a href=https://github.com/test-kitchen/kitchen-vagrant>kitchen-vagrant</a>, this quickly hits limitations as memory on a developer workstation can be fairly limited. In addition, an office full of laptop fans roaring at maximum speed does not make for a cozy work atmosphere.</p>
-<p>One of the most popular drivers for using Cloud-based VMs is <a href=https://github.com/test-kitchen/kitchen-ec2>kitchen-ec2</a> which connects to <a href=https://aws.amazon.com/ec2/>Amazon Web Services</a> accounts to run your tests. This allows you to easily launch 20 different VMs in parallel to check for different combinations of cookbook settings and operating systems.</p>
-<p>All those VMs only run for a few minutes and are paid for this duration only. Also, there is no permanent infrastructure needed which makes it an easy and cheap way to run your tests during development.</p>
-<p>An example configuration for this driver would be:</p>
-<div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:green;font-weight:700>driver</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>ec2<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>region</span>:<span style=color:#bbb> </span>eu-west-1<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>aws_ssh_key_id</span>:<span style=color:#bbb> </span>keypair_name_for_connecting<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>subnet_id</span>:<span style=color:#bbb> </span>subnet-12345678<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>instance_type</span>:<span style=color:#bbb> </span>t3.small<span style=color:#bbb>
-</span><span style=color:#bbb>  
-</span><span style=color:#bbb>  </span><span style=color:#408080;font-style:italic># If your cookbooks need some privileges, having a custom role is useful</span><span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>iam_profile_name</span>:<span style=color:#bbb> </span>ChefKitchen<span style=color:#bbb>
-</span><span style=color:#bbb>  
-</span><span style=color:#bbb></span><span style=color:green;font-weight:700>platforms</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span>- <span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>rhel-7<span style=color:#bbb>
-</span><span style=color:#bbb>  </span>- <span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>centos-7<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:green;font-weight:700>driver</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:green;font-weight:700>image_search</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>CentOS Linux 7 *<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:green;font-weight:700>owner-alias</span>:<span style=color:#bbb> </span>aws-marketplace<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:green;font-weight:700>architecture</span>:<span style=color:#bbb> </span>x86_64<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:green;font-weight:700>virtualization-type</span>:<span style=color:#bbb> </span>hvm<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:green;font-weight:700>block_device_mappings</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span>- <span style=color:green;font-weight:700>device_name</span>:<span style=color:#bbb> </span>/dev/sda1<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:green;font-weight:700>ebs</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:green;font-weight:700>volume_size</span>:<span style=color:#bbb> </span><span style=color:#666>20</span><span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:green;font-weight:700>delete_on_termination</span>:<span style=color:#bbb> </span><span style=color:green;font-weight:700>true</span><span style=color:#bbb>
-</span></code></pre></div><p>This example is a bit verbose, but also show some of the possibilities to customize your setup. Notice that the RHEL7 platform does not need any additional information (as lookup of base AMIs is built into the driver), but you can specify a lot of overrides or search expressions within an additional platform-specific <code>driver</code> section.</p>
-<p>Our objective with testing is not only coverage, but especially quick feedback. There are some rules of thumb stating that tests running longer than an average coffee break will lead to developers switching tasks and losing focus.</p>
-<p>Even though EC2 instances boot up quicker than some local VMs, we could further optimize this by including the needed software in our used images instead of waiting for Test Kitchen to install ChefDK every time we start a VM (losing 2-3 minutes each time). You will want to test with a specific Chef version anyway, to avoid having development drifting into newer, more feature-rich versions than are available in your real environment. So, baking this into the AMIs is a valid approach</p>
-<h2 id=devprod-parity>Dev/Prod Parity</h2>
-<p>This stresses one important point: <a href=https://12factor.net/dev-prod-parity>The paradigm of &ldquo;Dev/Prod Parity&rdquo;</a> states, that you should always test under the same circumstances that your production system runs in. If you work with on-premise production systems, using AWS will not only differ in the exact OS configuration, but also the whole networking setup including Proxies and DNS. This might mean that you face bugs in good old production systems that could never occur in your fancy AWS environment.</p>
-<p>Of course, with additional tooling you could bring AWS and your On-Prem site more into sync. One popular choice is <a href=https://www.packer.io/>Hashicorp Packer</a>, which allows you to build images once (possibly including Chef already) and deploy them into different datacenters or clouds. That would still lead to different network setups though.</p>
-<p>In the next post of this series we will have a look at an alternative driver called <a href=https://github.com/chef/kitchen-vcenter>kitchen-vcenter</a> which can help you out in this area by testing in your regular datacenter. It is also capable to have complete Windows VMs up and running within less than 20 seconds!</p>
-</div>
-</div>
-</article>
-<article class=uk-article>
-<div class=container>
-<section class=author-box itemprop=author itemscope itemtype=https://schema.org/Person>
-<div class="media author-box">
-<div class=media-figure>
-<img alt="Author Image" src=/authors/theinen.png class="avatar avatar-100 photo" height=125 width=125>
-</div>
-<div class=media-body>
-<h2><a href=/authors/thomas-heinen>Thomas Heinen</a></h2>
-<p>
-Thomas is a Cloud Consultant and Trainer at tecRacer Consulting with a focus on Chef, AWS, DevOps and Security.
-</p>
-<div class=author-icons>
-<a target=_self class=author-website title="Thomas Heinen's Author Profile" href=/authors/thomas-heinen data-original-title="Author's Profile">
-<i class="fas fa-id-card"></i>
-</a>
-<a target=_new class=author-xing title="Thomas Heinen on Xing" href=https://xing.com/profile/Thomas_Heinen4 data-original-title=Xing>
-<i class="fab fa-xing"></i>
-</a>
-<a target=_new class=author-linkedin title="Thomas Heinen on LinkedIn" href=https://linkedin.com/in/thomas-heinen data-original-title=LinkdIn>
-<i class="fab fa-linkedin"></i>
-</a>
-<a target=_new class=author-github title="Thomas Heinen on GitHub" href=https://github.com/tecracer-theinen data-original-title=Github>
-<i class="fab fa-github"></i>
-</a>
-</div>
-</div>
-</div>
-</section>
-</div>
-</article>
-</main>
-</div>
-<div id=tm-footer class=tm-footer>
-<div id=tm-footer class="tm-footer tm-footer-margin-top">
-<div class="uk-panel uk-panel-space uk-text-center">
-<p>Copyright © 2018-today by <a href=https://chef.tecracer.de/ target=_blank>tecRacer</a></p>
-</div>
-</div>
-</div><div id=offcanvas class=uk-offcanvas aria-hidden=true>
-<div class="uk-offcanvas-bar uk-offcanvas-bar-flip">
-<div class="uk-panel uk-text-center">
-<a href=https://tecracer-chef.github.io/></a>
-<img src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
-</a>
-</div>
-<ul class="uk-nav uk-nav-offcanvas">
-<li><a href=/ title>Blog</a></li>
-<li><a href=/authors title>Authors</a></li>
-<li><a href=/github/github-prs.html title>Pull Requests</a></li>
-</ul>
-</div>
-</div>
-</div>
-</body>
-</html>
+<script src=https://tecracer-chef.github.io/js/fa-all.js></script></head><body><div class="uk-container uk-container-center"><div class=tm-header><div class="tm-toolbar uk-clearfix uk-hidden-small"><div class=uk-float-right><div class=uk-panel><ul class=uk-subnav><li><a href=https://github.com/tecracer-chef class="uk-icon-hover uk-icon-small uk-icon-github" target=_blank></a></li><li><a href=https://twitter.com/tecracer class="uk-icon-hover uk-icon-small uk-icon-twitter" target=_blank></a></li><li><a href=https://www.xing.com/companies/tecracergmbh%26co.kg class="uk-icon-hover uk-icon-small uk-icon-xing" target=_blank></a></li><li><a href=https://www.linkedin.com/company/tecracer-group/ class="uk-icon-hover uk-icon-small uk-icon-linkedin" target=_blank></a></li><li><a href=https://www.facebook.com/tecRacer class="uk-icon-hover uk-icon-small uk-icon-facebook" target=_blank></a></li></ul></div></div></div><nav class=uk-navbar><a class=uk-navbar-brand href=/><img class="tm-logo uk-responsive-height uk-hidden-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt>
+<img class="tm-logo-small uk-responsive-height uk-visible-small" src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt></a><div class=uk-hidden-small><ul class=uk-navbar-nav><li><a href=/ title>Blog</a></li><li><a href=/authors title>Authors</a></li><li><a href=/github/github-prs.html title>Pull Requests</a></li></ul></div><div class="uk-navbar-flip uk-visible-small"><a href=#offcanvas class=uk-navbar-toggle data-uk-offcanvas></a></div></nav></div><div id=content><main id=tm-content class=tm-content><article class=uk-article><div class="tm-article-featured-image uk-cover-background" style=background-image:url(img/2019/09/taylor-wilcox-cABI3p0F7rU-unsplash.jpg)></div><div class="tm-article-content uk-position-relative"><div class="tm-article-date uk-text-center"><span class=tm-article-date-day>20</span>
+<span class=tm-article-date-month>Sep</span></div><h1 class=uk-article-title>The kitchen-ec2 Driver</h1><p class=uk-article-meta>Written by
+<a target=_self title="Thomas Heinen's Author Profile SINGLE.HTML" href=/authors/thomas-heinen data-original-title="Author's Profile">Thomas Heinen</a></p><div class=uk-margin><h1 id=the-kitchen-ec2-driver>The kitchen-ec2 Driver</h1><p>Within the Chef ecosystem, Test Kitchen is one of the most useful tools. It offers the possibility to quickly test cookbooks in different OS environments on machines with a limited lifetime. That way, you can check if your fancy recipes work the same on RedHat, Centos 6 and Ubuntu. As speed is king, this fast feedback motivates more for early testing and reduces the amount of bugs found in production.</p><h2 id=intro-to-kitchen>Intro to Kitchen</h2><p>Test Kitchen covers the full lifecycle of a VM:</p><ul><li><code>create</code> a new machine</li><li><code>converge</code> by setting up Chef/ChefDK, uploading cookbooks and executing them</li><li><code>verify</code> if everything was done as intended (mostly using InSpec tests)</li><li><code>destroy</code> the machines after testing to avoid inconsistencies later on</li></ul><p>All this can also be done in a single step via <code>kitchen test</code>, which will run through the whole cycle. When a machine succeeds, it will be deleted immediately (as it has served is cause) but a failed machine will be left running for diagnostics.</p><p>(Side note: if you want to remove the failed machines as well, which is common to CI/CD pipelines, you can use <code>kitchen test --destroy always</code>)</p><p>There are other posts detailing how to work with Test Kitchen (TK), configure different platforms and suites. In this series, our focus will be on the &ldquo;driver&rdquo; layer of TK which handles the (de)provisioning of virtual machines only.</p><h2 id=kitchen-ec2>kitchen-ec2</h2><p>While it is feasible to use local VMs, mostly via <a href=https://github.com/test-kitchen/kitchen-vagrant>kitchen-vagrant</a>, this quickly hits limitations as memory on a developer workstation can be fairly limited. In addition, an office full of laptop fans roaring at maximum speed does not make for a cozy work atmosphere.</p><p>One of the most popular drivers for using Cloud-based VMs is <a href=https://github.com/test-kitchen/kitchen-ec2>kitchen-ec2</a> which connects to <a href=https://aws.amazon.com/ec2/>Amazon Web Services</a> accounts to run your tests. This allows you to easily launch 20 different VMs in parallel to check for different combinations of cookbook settings and operating systems.</p><p>All those VMs only run for a few minutes and are paid for this duration only. Also, there is no permanent infrastructure needed which makes it an easy and cheap way to run your tests during development.</p><p>An example configuration for this driver would be:</p><div class=highlight><pre tabindex=0 style=-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=display:flex><span><span style=color:green;font-weight:700>driver</span>:<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>ec2<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>region</span>:<span style=color:#bbb> </span>eu-west-1<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>aws_ssh_key_id</span>:<span style=color:#bbb> </span>keypair_name_for_connecting<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>subnet_id</span>:<span style=color:#bbb> </span>subnet-12345678<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>instance_type</span>:<span style=color:#bbb> </span>t3.small<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>  
+</span></span></span><span style=display:flex><span><span style=color:#bbb>  </span><span style=color:#408080;font-style:italic># If your cookbooks need some privileges, having a custom role is useful</span><span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>  </span><span style=color:green;font-weight:700>iam_profile_name</span>:<span style=color:#bbb> </span>ChefKitchen<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>  
+</span></span></span><span style=display:flex><span><span style=color:#bbb></span><span style=color:green;font-weight:700>platforms</span>:<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>  </span>- <span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>rhel-7<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>  </span>- <span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>centos-7<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>    </span><span style=color:green;font-weight:700>driver</span>:<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>      </span><span style=color:green;font-weight:700>image_search</span>:<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>        </span><span style=color:green;font-weight:700>name</span>:<span style=color:#bbb> </span>CentOS Linux 7 *<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>        </span><span style=color:green;font-weight:700>owner-alias</span>:<span style=color:#bbb> </span>aws-marketplace<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>        </span><span style=color:green;font-weight:700>architecture</span>:<span style=color:#bbb> </span>x86_64<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>        </span><span style=color:green;font-weight:700>virtualization-type</span>:<span style=color:#bbb> </span>hvm<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>      </span><span style=color:green;font-weight:700>block_device_mappings</span>:<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>      </span>- <span style=color:green;font-weight:700>device_name</span>:<span style=color:#bbb> </span>/dev/sda1<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>        </span><span style=color:green;font-weight:700>ebs</span>:<span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>          </span><span style=color:green;font-weight:700>volume_size</span>:<span style=color:#bbb> </span><span style=color:#666>20</span><span style=color:#bbb>
+</span></span></span><span style=display:flex><span><span style=color:#bbb>          </span><span style=color:green;font-weight:700>delete_on_termination</span>:<span style=color:#bbb> </span><span style=color:green;font-weight:700>true</span><span style=color:#bbb>
+</span></span></span></code></pre></div><p>This example is a bit verbose, but also show some of the possibilities to customize your setup. Notice that the RHEL7 platform does not need any additional information (as lookup of base AMIs is built into the driver), but you can specify a lot of overrides or search expressions within an additional platform-specific <code>driver</code> section.</p><p>Our objective with testing is not only coverage, but especially quick feedback. There are some rules of thumb stating that tests running longer than an average coffee break will lead to developers switching tasks and losing focus.</p><p>Even though EC2 instances boot up quicker than some local VMs, we could further optimize this by including the needed software in our used images instead of waiting for Test Kitchen to install ChefDK every time we start a VM (losing 2-3 minutes each time). You will want to test with a specific Chef version anyway, to avoid having development drifting into newer, more feature-rich versions than are available in your real environment. So, baking this into the AMIs is a valid approach</p><h2 id=devprod-parity>Dev/Prod Parity</h2><p>This stresses one important point: <a href=https://12factor.net/dev-prod-parity>The paradigm of &ldquo;Dev/Prod Parity&rdquo;</a> states, that you should always test under the same circumstances that your production system runs in. If you work with on-premise production systems, using AWS will not only differ in the exact OS configuration, but also the whole networking setup including Proxies and DNS. This might mean that you face bugs in good old production systems that could never occur in your fancy AWS environment.</p><p>Of course, with additional tooling you could bring AWS and your On-Prem site more into sync. One popular choice is <a href=https://www.packer.io/>Hashicorp Packer</a>, which allows you to build images once (possibly including Chef already) and deploy them into different datacenters or clouds. That would still lead to different network setups though.</p><p>In the next post of this series we will have a look at an alternative driver called <a href=https://github.com/chef/kitchen-vcenter>kitchen-vcenter</a> which can help you out in this area by testing in your regular datacenter. It is also capable to have complete Windows VMs up and running within less than 20 seconds!</p></div></div></article><article class=uk-article><div class=container><section class=author-box itemprop=author itemscope itemtype=https://schema.org/Person><div class="media author-box"><div class=media-figure><img alt="Author Image" src=/authors/theinen.png class="avatar avatar-100 photo" height=125 width=125></div><div class=media-body><h2><a href=/authors/thomas-heinen>Thomas Heinen</a></h2><p>Thomas is a Cloud Consultant and Trainer at tecRacer Consulting with a focus on Chef, AWS, DevOps and Security.</p><div class=author-icons><a target=_self class=author-website title="Thomas Heinen's Author Profile" href=/authors/thomas-heinen data-original-title="Author's Profile"><i class="fas fa-id-card"></i></a>
+<a target=_new class=author-xing title="Thomas Heinen on Xing" href=https://xing.com/profile/Thomas_Heinen4 data-original-title=Xing><i class="fab fa-xing"></i></a>
+<a target=_new class=author-linkedin title="Thomas Heinen on LinkedIn" href=https://linkedin.com/in/thomas-heinen data-original-title=LinkdIn><i class="fab fa-linkedin"></i></a>
+<a target=_new class=author-github title="Thomas Heinen on GitHub" href=https://github.com/tecracer-theinen data-original-title=Github><i class="fab fa-github"></i></a></div></div></div></section></div></article></main></div><div id=tm-footer class=tm-footer><div id=tm-footer class="tm-footer tm-footer-margin-top"><div class="uk-panel uk-panel-space uk-text-center"><p>Copyright © 2018-today by <a href=https://chef.tecracer.de/ target=_blank>tecRacer</a></p></div></div></div><div id=offcanvas class=uk-offcanvas aria-hidden=true><div class="uk-offcanvas-bar uk-offcanvas-bar-flip"><div class="uk-panel uk-text-center"><a href=https://tecracer-chef.github.io/></a>
+<img src=https://tecracer-chef.github.io/img/logo/logo-tr.png alt></a></div><ul class="uk-nav uk-nav-offcanvas"><li><a href=/ title>Blog</a></li><li><a href=/authors title>Authors</a></li><li><a href=/github/github-prs.html title>Pull Requests</a></li></ul></div></div></div></body></html>
